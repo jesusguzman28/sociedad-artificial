@@ -1,0 +1,1796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dos mundos que aprenden</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: barra superior fija con los controles de ejecución; dos paneles de mundo + un carril lateral; debajo, pestañas de análisis. */
+  :root {
+    --bg: #f2f4f7; --surface: #ffffff; --surface-2: #f7f8fa; --ink: #14181f; --ink-2: #4f5866; --ink-3: #8690a0; --line: #dde2ea; --line-2: #eef1f5;
+    --accent: #1f5f8b; --accent-ink: #ffffff; --good: #1b8f5a; --warn: #b87a00; --bad: #c9403f;
+    --A: #2a78d6; --B: #eb6834; --agua: #2a78d6;
+    --font: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; --mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+    --radio: 8px; --sombra: 0 1px 2px rgba(20,24,31,.06), 0 4px 16px rgba(20,24,31,.05);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg: #0f1216; --surface: #171b21; --surface-2: #1d222a; --ink: #eef1f5; --ink-2: #aab3bf; --ink-3: #737d8a; --line: #2a313a; --line-2: #222831;
+    --accent: #5aa1d6; --accent-ink: #0f1216; --good: #3cc47f; --warn: #e0a53a; --bad: #e86b6a; --A: #3987e5; --B: #ef7b4f; --sombra: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+    color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg: #0f1216; --surface: #171b21; --surface-2: #1d222a; --ink: #eef1f5; --ink-2: #aab3bf; --ink-3: #737d8a; --line: #2a313a; --line-2: #222831;
+    --accent: #5aa1d6; --accent-ink: #0f1216; --good: #3cc47f; --warn: #e0a53a; --bad: #e86b6a; --A: #3987e5; --B: #ef7b4f; --sombra: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.3);
+    color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 14px/1.45 var(--font); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+  button, input, select { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Barra superior */
+  .appbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 10px 24px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .marca { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .marca .logo { width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, var(--A), var(--B)); flex: none; }
+  .marca h1 { font-size: 17px; letter-spacing: -.01em; }
+  .marca p { margin: 0; color: var(--ink-3); font-size: 12px; }
+  .controles { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-left: auto; }
+  .campo { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+  .campo b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+  .campo input[type=range] { width: 130px; accent-color: var(--accent); }
+  .check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); }
+  .check input { accent-color: var(--accent); }
+
+  /* Botones */
+  button { border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 6px; padding: 7px 12px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .12s, border-color .12s; }
+  button:hover { background: var(--surface-2); border-color: var(--ink-3); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.primario { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+  button.primario:hover { opacity: .9; }
+  button.activo { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button.icono { width: 36px; padding: 7px 0; text-align: center; }
+  .botones { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ancho { width: 100%; margin-top: 6px; }
+
+  /* Cuerpo */
+  .contenido { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; padding: 20px 24px 40px; max-width: 1500px; margin: 0 auto; }
+  .mundos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-width: 0; }
+  .rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 70px; align-self: start; }
+  .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radio); box-shadow: var(--sombra); padding: 14px 16px; min-width: 0; }
+  .panel > h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 10px; }
+  .nota { color: var(--ink-3); font-size: 12px; margin: 8px 0 0; }
+
+  /* Paneles de mundo */
+  .mundo { padding: 0; overflow: hidden; }
+  .mundo-cab { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line-2); }
+  .mundo-cab h2 { font-size: 15px; }
+  .mundo-cab .punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+  .mundo-cab .campo { margin-left: auto; }
+  .mundo-cab input[type=number] { width: 110px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); font-family: var(--mono); font-size: 12px; }
+  canvas.mapa { display: block; width: 100%; height: auto; cursor: crosshair; background: #fcfcfb; border-bottom: 1px solid var(--line-2); }
+  .strip { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line-2); }
+  .strip > div { padding: 8px 12px; border-right: 1px solid var(--line-2); }
+  .strip > div:last-child { border-right: 0; }
+  .strip span { display: block; font-size: 11px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .strip b { display: block; font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; }
+  .extincion { margin: 12px 16px 0; padding: 10px 14px; border-left: 3px solid var(--bad); background: var(--surface-2); border-radius: 6px; font-size: 13px; }
+  .extincion h3 { font-size: 13px; color: var(--bad); margin-bottom: 4px; }
+  .extincion p { margin: 4px 0; color: var(--ink-2); }
+  .chip { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-3); }
+  .chip.corriendo i { background: var(--good); animation: latido 1.2s infinite; }
+  @keyframes latido { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  .guia { grid-column: 1 / -1; }
+  .guia ol { margin: 0 0 10px; padding-left: 20px; max-width: 80ch; color: var(--ink-2); }
+  .guia li { margin: 4px 0; }
+  .guia li b { color: var(--ink); }
+  .estado-ok { color: var(--good); font-weight: 600; }
+  .estado-mal { color: var(--bad); font-weight: 600; }
+  .estado-dudoso { color: var(--warn); font-weight: 600; }
+  .perillas-box { padding: 0 16px 12px; }
+  .perillas-box summary { cursor: pointer; padding: 10px 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); list-style: none; display: flex; align-items: center; gap: 6px; }
+  .perillas-box summary::before { content: "▸"; transition: transform .15s; }
+  .perillas-box[open] summary::before { transform: rotate(90deg); }
+  .perillas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 18px; }
+  .perilla { display: grid; grid-template-columns: 1fr 96px 70px; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+  .perilla input { width: 100%; accent-color: var(--accent); }
+  .perilla b { font-weight: 500; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Carril: pincel y registro */
+  .segmentado { display: flex; flex-wrap: wrap; gap: 6px; }
+  .segmentado button { padding: 6px 10px; font-size: 12px; }
+  #log { height: 180px; overflow: auto; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; font: 11.5px/1.5 var(--mono); white-space: pre-wrap; color: var(--ink-2); }
+
+  /* Pestañas */
+  .pestanas { grid-column: 1 / -1; display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-top: 4px; }
+  .pestana { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; color: var(--ink-2); padding: 10px 14px; margin-bottom: -1px; }
+  .pestana:hover { background: none; color: var(--ink); }
+  .pestana.activa { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab { grid-column: 1 / -1; min-width: 0; }
+  .leyenda-series { display: flex; gap: 16px; font-size: 12px; color: var(--ink-2); margin-bottom: 10px; }
+  .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+
+  /* Gráficas */
+  .graficas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+  .grafica { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radio); padding: 10px 12px 6px; min-width: 0; }
+  .grafica .titulo { font-size: 12px; color: var(--ink-2); margin-bottom: 4px; }
+  .grafica canvas { width: 100%; height: 110px; display: block; }
+  .tooltip { position: fixed; pointer-events: none; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; font-size: 12px; display: none; white-space: nowrap; font-variant-numeric: tabular-nums; box-shadow: var(--sombra); z-index: 20; }
+
+  /* Tablas */
+  .tabla-wrap { overflow-x: auto; padding: 0; }
+  table.comp { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.comp th, table.comp td { padding: 8px 14px; border-bottom: 1px solid var(--line-2); text-align: right; white-space: nowrap; }
+  table.comp th { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 500; background: var(--surface-2); position: sticky; top: 0; }
+  table.comp td:first-child, table.comp th:first-child { text-align: left; color: var(--ink-2); white-space: normal; }
+  table.comp tr:last-child td { border-bottom: 0; }
+
+  /* Experimentos */
+  .expform { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px 16px; align-items: end; }
+  .expform label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--ink-2); }
+  .expform label.check { flex-direction: row; align-items: center; }
+  .expform input[type=text], .expform input[type=number], .expform select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); font-size: 13px; width: 100%; }
+  .expacciones { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .barra-progreso { height: 6px; background: var(--line-2); border-radius: 3px; overflow: hidden; margin-top: 6px; }
+  .barra-progreso div { height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .leyenda-mapa { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px 20px; font-size: 13px; color: var(--ink-2); margin: 0; padding: 0; list-style: none; }
+  .leyenda-mapa li b { color: var(--ink); font-weight: 500; }
+  .modelo { color: var(--ink); font-size: 13.5px; line-height: 1.55; max-width: 78ch; }
+  .modelo p { margin: 0 0 10px; }
+  details.ideas { font-size: 13px; color: var(--ink-2); margin-top: 12px; }
+  details.ideas summary { cursor: pointer; color: var(--ink); }
+
+  @media (max-width: 1180px) { .contenido { grid-template-columns: 1fr; } .rail { position: static; } .graficas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 860px) { .mundos { grid-template-columns: 1fr; } .graficas { grid-template-columns: 1fr; } .strip { grid-template-columns: repeat(3, 1fr); } .perillas { grid-template-columns: 1fr; } .contenido { padding: 16px; } .appbar { padding: 10px 16px; } }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="marca"><span class="logo" aria-hidden="true"></span><div><h1>Dos mundos que aprenden</h1><p>Simulador de economías con personas que heredan, aprenden y se asientan</p></div></div>
+  <div class="controles">
+    <span id="estado" class="chip" title="Estado de la simulación. Atajo: barra espaciadora para correr o pausar"><i></i>Pausado · año 0</span>
+    <button id="btnCorrer" class="primario" title="Correr o pausar los dos mundos (barra espaciadora)">▶ Correr ambos</button>
+    <button id="btnReiniciar" title="Vuelve a empezar los dos mundos con sus semillas actuales">Reiniciar ambos</button>
+    <label class="campo" for="vel" title="Años simulados por segundo real. Si la máquina no alcanza, avanza lo que puede">Velocidad <input type="range" id="vel" min="1" max="200" step="1" value="10"> <b id="velTxt">10</b> años/s</label>
+    <label class="check" title="No dibuja los mapas para avanzar más rápido; las gráficas siguen"><input type="checkbox" id="chkRapido"> Modo rápido (sin mapas)</label>
+    <button id="btnGuia" class="icono" title="Guía rápida" aria-label="Guía rápida">?</button>
+    <button id="btnTema" class="icono" title="Cambiar entre tema claro y oscuro" aria-label="Cambiar tema">◐</button>
+  </div>
+</header>
+
+<main class="contenido">
+  <section class="panel guia" id="guia" hidden>
+    <h2>Guía rápida</h2>
+    <ol>
+      <li><b>Correr.</b> Pulsa ▶ Correr ambos (o la barra espaciadora). Cada mundo avanza en meses; la velocidad está en años por segundo.</li>
+      <li><b>Mirar.</b> Pasa el ratón por un mapa para inspeccionar la casilla: terreno, cultivo, hogar y la persona que está ahí, con sus genes y su reserva.</li>
+      <li><b>Comparar.</b> Elige un sistema económico distinto en cada mundo, o copia A → B y cambia una sola perilla. Las pestañas Gráficas y Comparación muestran los dos mundos superpuestos.</li>
+      <li><b>Dibujar.</b> Con el pincel pinta paredes, agua (crea orilla fértil) o tierra sobre un mapa, incluso mientras corre.</li>
+      <li><b>Investigar.</b> En Experimentos corres réplicas con estadística y descargas un informe con estructura de paper. En Validación compruebas que el modelo reproduce regularidades conocidas.</li>
+    </ol>
+    <button id="btnCerrarGuia">Cerrar</button>
+  </section>
+  <section class="mundos">
+    <article class="panel mundo" id="cajaA"></article>
+    <article class="panel mundo" id="cajaB"></article>
+  </section>
+
+  <aside class="rail">
+    <section class="panel">
+      <h2>Pincel</h2>
+      <div id="pinceles" class="segmentado"></div>
+      <label class="campo" for="pincelTam" style="margin-top:10px">Tamaño <input type="range" id="pincelTam" min="1" max="4" value="1"><b id="pincelTamTxt">1</b></label>
+      <p class="nota">Clic o arrastre sobre un mapa. El agua pintada crea una orilla fértil de hasta 4 casillas; las paredes bloquean el paso.</p>
+    </section>
+    <section class="panel">
+      <h2>Población</h2>
+      <label class="campo" for="maxPob">Límite por mundo <input type="range" id="maxPob" min="200" max="6000" step="100" value="3000"><b id="maxPobTxt">3000</b></label>
+      <p class="nota">Solo evita que el navegador se trabe; la población real la limitan la comida y el espacio.</p>
+    </section>
+    <section class="panel">
+      <h2>Archivos</h2>
+      <div class="botones"><button id="btnDescA">Guardar A</button><button id="btnDescB">Guardar B</button><button id="btnCargA">Cargar en A</button><button id="btnCargB">Cargar en B</button></div>
+      <button id="btnCopiar" class="ancho">Copiar perillas, mapa y semilla de A → B</button>
+      <input type="file" id="archivo" accept=".txt" hidden>
+    </section>
+    <section class="panel">
+      <h2>Registro</h2>
+      <div id="log" aria-live="polite"></div>
+    </section>
+  </aside>
+
+  <nav class="pestanas" role="tablist" aria-label="Análisis">
+    <button class="pestana activa" data-tab="graficas" role="tab">Gráficas</button>
+    <button class="pestana" data-tab="comparacion" role="tab">Comparación</button>
+    <button class="pestana" data-tab="experimentos" role="tab">Experimentos</button>
+    <button class="pestana" data-tab="modelo" role="tab">Modelo y leyenda</button>
+    <button class="pestana" data-tab="validacion" role="tab">Validación</button>
+  </nav>
+
+  <section class="tab" id="tab-graficas">
+    <div class="leyenda-series" style="align-items:center;flex-wrap:wrap"><span><i class="sw" style="background:var(--A)"></i>Mundo A</span><span><i class="sw" style="background:var(--B)"></i>Mundo B</span>
+      <span style="color:var(--ink-3)">Pasa el ratón por una gráfica para ver los valores por año.</span>
+      <span style="margin-left:auto;display:inline-flex;gap:4px;align-items:center">Ventana:
+        <button class="ventana activo" data-anios="0">todo</button><button class="ventana" data-anios="200">200 años</button><button class="ventana" data-anios="50">50 años</button>
+        <button id="btnGraficasPNG" title="Descarga todas las gráficas en una sola imagen PNG">Exportar imagen</button></span></div>
+    <div class="graficas" id="graficas"></div>
+  </section>
+
+  <section class="tab" id="tab-comparacion" hidden>
+    <div class="panel tabla-wrap"><table class="comp" id="tabla"></table></div>
+  </section>
+
+  <section class="tab" id="tab-experimentos" hidden>
+    <div class="panel">
+      <h2>Experimentos con réplicas</h2>
+      <p class="nota" style="margin:0 0 12px">Toma las perillas del Mundo A como base, varía un parámetro en varios niveles y corre varias réplicas por nivel con semillas distintas. Calcula media, intervalo de confianza del 95 %, prueba t de Welch contra el primer nivel y d de Cohen. Corre en segundo plano; la página sigue usable.</p>
+      <div class="expform">
+        <label>Título <input id="expTitulo" type="text" placeholder="Efecto del impuesto sobre la producción"></label>
+        <label>Parámetro a variar <select id="expParam"></select></label>
+        <label>Niveles (separados por comas) <input id="expNiveles" type="text" placeholder="0, 0.1, 0.2, 0.3"></label>
+        <label>Réplicas por nivel <input id="expReplicas" type="number" min="1" max="30" value="5"></label>
+        <label>Duración (años) <input id="expDuracion" type="number" min="10" max="2000" value="150"></label>
+        <label>Semilla base <input id="expSemilla" type="number" value="12345"></label>
+        <label class="check"><input type="checkbox" id="expMapa" checked> Mismo mapa del Mundo A en todas las réplicas</label>
+      </div>
+      <div class="expacciones">
+        <button id="expCorrer" class="primario">Ejecutar experimento</button>
+        <button id="expCancelar" disabled>Cancelar</button>
+      </div>
+      <div id="expProgreso" class="nota" style="margin:12px 0">Sin experimento en curso.</div>
+      <div class="tabla-wrap"><table class="comp" id="expTabla"></table></div>
+      <div class="expacciones">
+        <button id="expInforme" disabled>Descargar informe (HTML con estructura de paper)</button>
+        <button id="expCSV1" disabled>Datos por réplica (CSV)</button>
+        <button id="expCSV2" disabled>Series temporales (CSV)</button>
+      </div>
+      <details class="ideas"><summary>Ideas de experimentos</summary>
+        <ul>
+          <li>Mismo mapa en A y B, pero en B un impuesto del 20 %. ¿Quién produce más? ¿Quién es más igualitario?</li>
+          <li>Un muro que separe el agua de la tierra fértil en B. ¿Sobreviven? ¿Qué genes ganan?</li>
+          <li>Un solo charco de agua en el centro. ¿Aparecen peleas alrededor?</li>
+          <li>Robo fácil en A y nulo en B: compara fuerza media y defensa.</li>
+          <li>Tasa de fertilidad baja frente a alta: ¿cuándo aparecen más migraciones y ciudades?</li>
+          <li><b>Anarcocapitalismo frente a comunismo:</b> en vivo, elige un sistema en cada mundo con el mismo mapa (Copiar A → B); con réplicas, parámetro "Sistema económico" y niveles "1, 2". Compara producción, desigualdad, hambrientos, ataques, cultivos y población.</li>
+        </ul>
+      </details>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-modelo" hidden>
+    <div class="panel">
+      <h2>Leyenda del mapa</h2>
+      <ul class="leyenda-mapa">
+        <li><b>Terreno:</b> tierra pelada → pasto → arbustos → árboles según cuánta comida hay. Azul: agua. Gris: pared.</li>
+        <li><b>Personas:</b> hombres y mujeres con distinta cara. Campesino/a: resistente. Forzudo/guerrera: fuerte. Mago/sabia: inteligente. Armadura: muy defendido.</li>
+        <li><b>Marcas:</b> punto rojo arriba: hambriento. Punto rosa: embarazada. Punto azul: emigrando. Plato: reserva de comida grande. Pico: herramienta. Escudo: algo de defensa.</li>
+        <li><b>Cultivos:</b> surcos con brote, planta y espigas doradas al madurar. Punto rojo en el cultivo: seco, alguien debe traerle agua.</li>
+        <li><b>Viviendas:</b> hogar de hasta 5 personas. Carpa si está aislada, casa de madera con vecinas, edificio de piedra en el centro denso. Tenue: sin nadie.</li>
+        <li><b>Sucesos:</b> espada y línea roja: ataque. Fantasma: alguien murió y desapareció. Aro verde alrededor de una persona: está enferma.</li>
+      </ul>
+      <h2 style="margin-top:18px">Reglas fijas, como en humanos</h2>
+      <p class="modelo">Un turno es un mes. Embarazo de 9 meses y un año de descanso entre hijos. Mujeres fértiles desde la edad adulta hasta los 45. Comen cada mes de su reserva y beben a 2 casillas del agua. El riesgo de morir sube con la edad. Una persona por casilla y todos pertenecen a un hogar.</p>
+      <h2 style="margin-top:18px">Descripción completa del modelo (para la sección de Métodos)</h2>
+      <div id="descModelo" class="modelo"></div>
+    </div>
+  </section>
+
+  <section class="tab" id="tab-validacion" hidden>
+    <div class="panel">
+      <h2>Validación por hechos estilizados</h2>
+      <p class="modelo" style="margin-bottom:10px">Un modelo basado en agentes se valida primero comprobando que reproduce regularidades conocidas de la literatura (lo que Epstein y Axtell llaman "crecer" los fenómenos). Cada prueba corre el modelo en dos condiciones, con varias semillas, y comprueba una predicción cualitativa de un modelo o teoría profesional. <b>Esto no es una calibración con datos reales:</b> indica que el modelo se comporta como los modelos de referencia, no que prediga una economía concreta.</p>
+      <div class="expacciones"><button id="valCorrer" class="primario">Ejecutar validación (unos 2 minutos)</button><button id="valCancelar" disabled>Cancelar</button></div>
+      <div id="valProgreso" class="nota" style="margin:12px 0">Sin validación en curso.</div>
+      <div class="tabla-wrap"><table class="comp" id="valTabla"></table></div>
+      <p id="valResumen" class="nota" style="margin-top:10px"></p>
+    </div>
+  </section>
+</main>
+<div id="tooltip" class="tooltip"></div>
+
+<script id="modelo">
+// ============================================================ configuración
+const ANIO = 12;   // un turno es un mes; un año son 12 turnos
+const BASE_CFG = {
+  ancho: 48, alto: 30, agentesIni: 100, maxPob: 3000,
+  // Biología humana (fija, como en el mundo real): se puede ajustar la esperanza de vida y la edad adulta
+  maxEdad: 80 * ANIO, edadAdulta: 16 * ANIO, edadFertil: 45 * ANIO, tiempoGestacion: 9, descansoHijos: 12,
+  regen: 0.035, pudricion: 0.005, evaporacion: 0.03,
+  tiempoCultivo: ANIO, rendimientoCultivo: 20, costoSemilla: 2, mesesSecado: 3,
+  personasPorCasa: 5, costoCasa: 5,   // un hogar aloja hasta 5 personas; construirlo cuesta 5 de comida
+  fertilidad: 0.5,                    // probabilidad mensual de concebir cuando se dan las condiciones (pareja al lado, comida, hogar)
+  sistema: 0,                         // 0 mixto/personalizado, 1 anarcocapitalismo, 2 comunismo (ver SISTEMAS)
+  propiedadPrivada: 0,                // 1: los cultivos tienen dueño y cosechar lo ajeno es un robo; 0: cosecha libre
+  frecuenciaReparto: 10,              // cada cuántos meses se recauda y reparte el impuesto
+  repartoNecesidad: 0,                // 1: lo recaudado va primero a quien tiene menos de 8 de reserva; 0: todo por igual
+  herencia: 1,                        // 1: al morir, la reserva pasa a los miembros vivos de su hogar; 0: se pierde (Sugarscape: herencia)
+  contagio: 0,                        // probabilidad mensual de contagiar a cada vecino cuando se está enfermo (0 = sin enfermedades)
+  mapaTipo: 0,                        // 0 oasis, 1 río, 2 lago central, 3 dos oasis lejanos
+  costoHerr: 8, costoDef: 6, eficaciaAtaque: 0.7, botin: 0.35, impuesto: 0, costoRepro: 20,
+  gastoEnergia: 2, gastoSed: 0.8, energiaComida: 10, aguaTrago: 12, costoAtaque: 6, maxHerr: 6, maxDef: 6,
+};
+const PERILLAS = [
+  // Solo seis perillas por mundo, en términos humanos. Lo demás es biología fija o constantes del mundo.
+  ["maxEdad", "Esperanza de vida", 30 * ANIO, 100 * ANIO, 5 * ANIO, v => (v / ANIO) + " años"],
+  ["edadAdulta", "Edad adulta", 10 * ANIO, 30 * ANIO, ANIO, v => (v / ANIO) + " años"],
+  ["regen", "Riqueza de la tierra", 0.005, 0.1, 0.005, v => v <= 0.015 ? "pobre" : v <= 0.04 ? "normal" : v <= 0.07 ? "rica" : "muy rica"],
+  ["rendimientoCultivo", "Cosecha por parcela", 4, 40, 1, v => v + " comida"],
+  ["eficaciaAtaque", "Facilidad para robar", 0, 3, 0.1, v => v === 0 ? "imposible" : v < 0.5 ? "difícil" : v <= 1 ? "normal" : "fácil"],
+  ["impuesto", "Impuesto que se reparte", 0, 0.5, 0.01, v => (v * 100).toFixed(0) + "%"],
+  ["fertilidad", "Tasa de fertilidad", 0.02, 1, 0.02, v => (v * 100).toFixed(0) + "% al mes con pareja y comida"],
+  ["propiedadPrivada", "Propiedad privada de cultivos", 0, 1, 1, v => v ? "sí: cosechar lo ajeno es robo" : "no: cosecha libre"],
+  ["frecuenciaReparto", "Frecuencia del reparto", 1, 24, 1, v => v === 1 ? "cada mes" : "cada " + v + " meses"],
+  ["repartoNecesidad", "Cómo se reparte lo recaudado", 0, 1, 1, v => v ? "según necesidad (primero a quien menos tiene)" : "por igual"],
+  ["herencia", "Herencia al morir", 0, 1, 1, v => v ? "la reserva pasa a su hogar" : "la reserva se pierde"],
+  ["contagio", "Contagio de enfermedades", 0, 0.3, 0.01, v => v === 0 ? "sin enfermedades" : (v * 100).toFixed(0) + "% por vecino y mes"],
+];
+// Sistemas económicos: cada uno es un conjunto de reglas concretas sobre las perillas de arriba
+const SISTEMAS = {
+  0: { nombre: "Mixto (personalizado)", reglas: {}, descripcion: "Los valores que fije el usuario." },
+  1: { nombre: "Anarcocapitalismo", reglas: { impuesto: 0, frecuenciaReparto: 10, propiedadPrivada: 1, eficaciaAtaque: 0.7, repartoNecesidad: 0 },
+       descripcion: "Sin impuesto ni Estado. Propiedad privada de los cultivos; robar es posible y la única protección es la defensa que cada uno paga." },
+  2: { nombre: "Comunismo", reglas: { impuesto: 1, frecuenciaReparto: 1, propiedadPrivada: 0, eficaciaAtaque: 0, repartoNecesidad: 0 },
+       descripcion: "Cada mes toda la comida va al común y se reparte por igual. Los cultivos son de todos y el robo está prohibido." },
+  3: { nombre: "Anarquía primitiva", reglas: { impuesto: 0, frecuenciaReparto: 10, propiedadPrivada: 0, eficaciaAtaque: 1.5, repartoNecesidad: 0 },
+       descripcion: "Ni Estado ni propiedad: cualquiera cosecha cualquier parcela y robar es fácil. Solo la fuerza y la defensa propias cuentan." },
+  4: { nombre: "Capitalismo con Estado mínimo", reglas: { impuesto: 0.1, frecuenciaReparto: 12, propiedadPrivada: 1, eficaciaAtaque: 0.2, repartoNecesidad: 0 },
+       descripcion: "Propiedad privada protegida por un Estado que hace difícil robar y cobra un impuesto bajo (10 % al año) repartido por igual." },
+  5: { nombre: "Socialdemocracia", reglas: { impuesto: 0.35, frecuenciaReparto: 3, propiedadPrivada: 1, eficaciaAtaque: 0.2, repartoNecesidad: 1 },
+       descripcion: "Propiedad privada protegida, impuesto alto (35 % cada 3 meses) y reparto según necesidad: primero a quien tiene menos reserva, el resto por igual." },
+  6: { nombre: "Socialismo (planificación parcial)", reglas: { impuesto: 0.6, frecuenciaReparto: 1, propiedadPrivada: 0, eficaciaAtaque: 0, repartoNecesidad: 1 },
+       descripcion: "Cosecha libre y robo prohibido; el 60 % de la comida va cada mes al común y se reparte según necesidad." },
+};
+function aplicarSistema(cfg, codigo) { cfg.sistema = +codigo; Object.assign(cfg, SISTEMAS[+codigo] ? SISTEMAS[+codigo].reglas : {}); }
+const ACCIONES = ["ir a comida", "ir a agua", "recolectar o cosechar", "recoger agua", "herramienta", "defensa", "atacar", "vagar", "sembrar", "ir a regar", "construir casa", "comerciar"];
+const N_IN = 26, N_OC = 10, N_OUT = ACCIONES.length;
+const N_PESOS = N_IN * N_OC + (N_OC + 1) * N_OUT;
+const TIERRA = 0, PARED = 1, AGUA = 2;
+const PINCELES = [["pared", "Pared"], ["agua", "Agua"], ["fertil", "Tierra fértil"], ["yermo", "Tierra yerma"], ["borrar", "Quitar pared/agua"]];
+
+// ============================================================ utilidades
+// Azar reproducible: cada mundo tiene su semilla y su propio generador (mulberry32). RNG.actual apunta al del mundo que está calculando.
+function mulberry32(s) { let a = s >>> 0; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const RNG = { actual: Math.random };
+const rnd = () => RNG.actual();
+const gauss = () => { let u = 0, v = 0; while (!u) u = rnd(); while (!v) v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const $ = id => document.getElementById(id);
+function gini(valores) {
+  const v = valores.slice().sort((a, b) => a - b), n = v.length;
+  if (n < 2) return 0;
+  const suma = v.reduce((a, b) => a + b, 0); if (suma <= 0) return 0;
+  let acum = 0; for (let i = 0; i < n; i++) acum += (i + 1) * v[i];
+  return (2 * acum) / (n * suma) - (n + 1) / n;
+}
+function registrar(txt) { const l = $("log"); l.textContent += txt + "\n"; l.scrollTop = l.scrollHeight; }
+
+// ============================================================ cerebro y genes
+class Cerebro {
+  constructor(pesos) { this.pesos = pesos || Float64Array.from({ length: N_PESOS }, () => gauss() * 0.5); }
+  decidir(e) {
+    const p = this.pesos, oc = new Float64Array(N_OC); let k = 0;
+    for (let j = 0; j < N_OC; j++) { let s = 0; for (let i = 0; i < N_IN; i++) s += e[i] * p[k++]; oc[j] = Math.tanh(s); }
+    let mejor = 0, mv = -Infinity;
+    for (let o = 0; o < N_OUT; o++) { let s = p[k++]; for (let j = 0; j < N_OC; j++) s += oc[j] * p[k++]; if (s > mv) { mv = s; mejor = o; } }
+    return mejor;
+  }
+  mutado() { const p = Float64Array.from(this.pesos); for (let i = 0; i < p.length; i++) if (rnd() < 0.08) p[i] += gauss() * 0.4; return new Cerebro(p); }
+  static cruzar(a, b) {   // el hijo hereda cada conexión de la madre o del padre al azar
+    const p = Float64Array.from(a.pesos); for (let i = 0; i < p.length; i++) if (rnd() < 0.5) p[i] = b.pesos[i]; return new Cerebro(p);
+  }
+}
+// Genes: fuerza, inteligencia, resistencia. Suman siempre 3: ser mejor en algo cuesta en otra cosa.
+function genesAleatorios() { return normalizarGenes([0.5 + rnd(), 0.5 + rnd(), 0.5 + rnd()]); }
+function normalizarGenes(g) { const s = g[0] + g[1] + g[2]; return g.map(x => clamp(x * 3 / s, 0.3, 2)); }
+function mutarGenes(g) { return normalizarGenes(g.map(x => x + gauss() * 0.08)); }
+
+// ============================================================ mundo
+class Mundo {
+  constructor(nombre, color, semilla) {
+    this.nombre = nombre; this.color = color; this.cfg = { ...BASE_CFG };
+    this.semilla = semilla || Math.floor(Math.random() * 1e9);   // semilla de las personas y del azar del mundo
+    this.semillaMapa = this.semilla;                              // semilla del mapa (puede fijarse aparte para repetir el terreno)
+    this.generar();
+  }
+
+  generar(cerebros, conservarMapa) {
+    const c = this.cfg, W = c.ancho, H = c.alto;
+    this.rng = mulberry32(this.semilla); RNG.actual = this.rng;
+    if (!conservarMapa) {
+      const rm = mulberry32(this.semillaMapa);
+      this.tipo = new Uint8Array(W * H); this.fert = new Float64Array(W * H);
+      for (let b = 0; b < 7; b++) {
+        const cx = rm() * W, cy = rm() * H, sig = 3 + rm() * 4, amp = 0.5 + rm() * 0.6;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) this.fert[y * W + x] += amp * Math.exp(-((x - cx) ** 2 + (y - cy) ** 2) / (2 * sig * sig));
+      }
+      // agua según el tipo de mapa; toda agua lleva tierra fértil alrededor (orilla)
+      const lagos = [], tipoMapa = c.mapaTipo | 0;
+      const lago = (cx, cy, r) => { for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) lagos.push(y * W + x); };
+      if (tipoMapa === 1) {            // río que serpentea de lado a lado
+        const fase = rm() * 6.28, amp = 3 + rm() * 3, cy0 = H * (0.35 + rm() * 0.3);
+        for (let x = 0; x < W; x++) { const cy = cy0 + amp * Math.sin(x / 7 + fase) + 1.5 * Math.sin(x / 2.3 + fase * 2); for (let y = 0; y < H; y++) if (Math.abs(y - cy) <= 1) lagos.push(y * W + x); }
+      } else if (tipoMapa === 2) lago(W / 2, H / 2, 5);                                   // un gran lago central
+      else if (tipoMapa === 3) { lago(7, H / 2, 2.5); lago(W - 8, H / 2, 2.5); }           // dos oasis en extremos opuestos
+      else if (tipoMapa === 4) { for (let y = 0; y < H; y++) for (let x = 0; x < 3; x++) lagos.push(y * W + x); }   // costa: mar a lo largo del borde izquierdo
+      else if (tipoMapa === 5) { for (let l = 0; l < 12; l++) lago(3 + rm() * (W - 6), 2 + rm() * (H - 4), 1); }    // muchos charcos pequeños repartidos
+      else for (let l = 0; l < 4; l++) lago(4 + rm() * (W - 8), 3 + rm() * (H - 6), 1.5 + rm() * 1.5);   // cuatro oasis repartidos
+      for (const i of lagos) {
+        this.tipo[i] = AGUA; const lx = i % W, ly = (i / W) | 0;
+        for (let dy = -7; dy <= 7; dy++) for (let dx = -7; dx <= 7; dx++) {
+          const nx = lx + dx, ny = ly + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const j = ny * W + nx, f = 0.7 * Math.exp(-(dx * dx + dy * dy) / (2 * 3.5 * 3.5)); if (f > this.fert[j] * 0.5) this.fert[j] = Math.max(this.fert[j], Math.min(1, this.fert[j] * 0.5 + f));
+        }
+      }
+      for (let i = 0; i < W * H; i++) this.fert[i] = clamp(this.fert[i], 0, 1);
+    }
+    this.capComida = Float64Array.from(this.fert, f => 1 + 9 * f);
+    this.comida = Float64Array.from(this.capComida, (v, i) => this.tipo[i] === TIERRA ? v : 0);   // solo la tierra tiene comida
+    this.cultivo = new Float64Array(W * H);       // 0 = sin cultivo, 0..1 creciendo, 1 = maduro
+    this.cultivoEdad = new Uint16Array(W * H);    // turnos desde que maduró (sin cosechar se pudre)
+    this.riego = new Float64Array(W * H);         // agua disponible para el cultivo (1 = recién regado); en la orilla siempre 1
+    this.seco = new Uint16Array(W * H);           // meses seguidos sin riego
+    this.dueno = new Int32Array(W * H);           // quién sembró cada cultivo (importa si hay propiedad privada)
+    this.robosCosecha = 0;
+    this.siembras = 0; this.cosechas = 0; this.riegos = 0;
+    this.ocupado = new Int32Array(W * H);         // id de la persona que está en cada casilla (0 = libre): solo una por casilla
+    this.casa = new Int32Array(W * H);            // 0 = sin casa, si no el id del hogar que ocupa la casilla
+    this.hogares = new Map();                     // id -> { id, i: casilla, miembros: Set de ids de personas } (hasta personasPorCasa)
+    this.siguienteHogar = 1; this.migraciones = 0;
+    this.casaVaciaMeses = new Uint16Array(W * H); // meses que lleva sin miembros; a los 10 años la ruina desaparece
+    this.casasConstruidas = 0;
+    this.agua = new Float64Array(W * H);
+    this.recalcularAgua();
+    this.agentes = []; this.turno = 0; this.flashes = []; this.fantasmas = []; this.historia = []; this.salon = []; this.siguienteId = 1;
+    this.nacimientos = 0; this.mHambre = 0; this.mSed = 0; this.mVejez = 0; this.ataquesOk = 0; this.ataquesIntentos = 0; this.robado = 0;
+    this.sumaEdadMuerte = 0; this.nMuertes = 0; this.nacVentana = 0;   // para esperanza de vida y natalidad por ventana de muestreo
+    this.intercambios = 0; this.sumaPrecio = 0; this.intV = 0; this.precioV = 0; this.enfermosTotal = 0;   // comercio y enfermedades
+    this.vm = { h: 0, s: 0, v: 0, hom: 0, muj: 0, edadHom: 0, edadMuj: 0 };   // muertes de la ventana por causa y sexo (para explicar extinciones)
+    this.prodAcum = 0; this.ataqAcum = 0;
+    this.extinto = false;
+    // Los fundadores llegan en familias de 4, asentadas cerca del agua, cada una con su casa: todos tienen hogar desde el principio
+    let fundador = null;
+    for (let i = 0; i < c.agentesIni; i++) {
+      const cer = cerebros && cerebros.length ? cerebros[i % cerebros.length].cerebro.mutado() : new Cerebro();
+      const gen = cerebros && cerebros.length ? mutarGenes(cerebros[i % cerebros.length].genes) : genesAleatorios();
+      let sitio = null;
+      if (i % 4 && fundador) sitio = this.celdaLibreCerca(fundador.x, fundador.y, 2);
+      if (!sitio) { sitio = this.celdaLibre(true); fundador = null; }
+      const a = this.nuevoAgente(sitio, cer, gen, 1, 20, 10, i % 2 ? "M" : "H");   // mitad mujeres, mitad hombres
+      a.edad = Math.floor(rnd() * 0.5 * c.maxEdad);                                 // edades variadas, como una población real
+      this.ocupado[a.y * W + a.x] = a.id;
+      this.agentes.push(a);
+      if (!fundador) { const ci = a.y * W + a.x, id = this.siguienteHogar++; this.hogares.set(id, { id, i: ci, miembros: new Set([a.id]) }); this.casa[ci] = id; a.casa = id; this.comida[ci] = 0; fundador = a; }
+      else this.unirse(a, fundador.casa, true);
+    }
+  }
+
+  celdaLibre(cercaDelAgua) {
+    const W = this.cfg.ancho, H = this.cfg.alto;
+    for (let i = 0; i < 2000; i++) {
+      const x = Math.floor(rnd() * W), y = Math.floor(rnd() * H), k = y * W + x;
+      if (this.tipo[k] !== TIERRA || this.ocupado[k] || this.casa[k]) continue;
+      if (cercaDelAgua && i < 1500 && (this.distAgua[k] < 3 || this.distAgua[k] > 8)) continue;   // fundadores: a entre 3 y 8 casillas del agua
+      return [x, y];
+    }
+    return [0, 0];
+  }
+
+  // casilla libre (sin pared ni persona) más cercana a (x, y), hasta radio r; null si no hay
+  celdaLibreCerca(x, y, r) {
+    const W = this.cfg.ancho, H = this.cfg.alto;
+    for (let d = 1; d <= r; d++) for (let dy = -d; dy <= d; dy++) for (let dx = -d; dx <= d; dx++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy)) !== d) continue;
+      const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const i = ny * W + nx; if (this.tipo[i] !== PARED && !this.ocupado[i]) return [nx, ny];
+    }
+    return null;
+  }
+
+  // mueve a la persona si la casilla existe, no es pared y está libre (solo una persona por casilla)
+  mover(a, nx, ny) {
+    const W = this.cfg.ancho, H = this.cfg.alto;
+    if (nx < 0 || ny < 0 || nx >= W || ny >= H) return false;
+    const j = ny * W + nx; if (this.tipo[j] === PARED || (this.ocupado[j] && this.ocupado[j] !== a.id)) return false;
+    this.ocupado[a.y * W + a.x] = 0; a.x = nx; a.y = ny; this.ocupado[j] = a.id; return true;
+  }
+
+  nuevoAgente([x, y], cerebro, genes, gen, comida, agua, sexo) {
+    return { id: this.siguienteId++, x, y, energia: 80, sed: 80, comida, agua, herr: 0, def: 0, habilidad: 0, edad: 0, hijos: 0, gen, genes, cerebro, accion: 0,
+             sexo: sexo || (rnd() < 0.5 ? "M" : "H"), gestando: 0, descanso: 0, padre: null, casa: 0, destino: -1, atascado: 0, enfermo: 0 };
+  }
+
+  // distancia (en pasos, rodeando paredes) desde cada celda hasta el agua más cercana
+  recalcularAgua() {
+    const W = this.cfg.ancho, H = this.cfg.alto, d = new Int16Array(W * H).fill(-1), cola = [];
+    for (let i = 0; i < W * H; i++) if (this.tipo[i] === AGUA) { d[i] = 0; cola.push(i); this.agua[i] = 10; } else this.agua[i] = 0;
+    for (let q = 0; q < cola.length; q++) {
+      const i = cola[q], x = i % W, y = (i / W) | 0;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const j = ny * W + nx; if (d[j] === -1 && this.tipo[j] !== PARED) { d[j] = d[i] + 1; cola.push(j); }
+      }
+    }
+    this.distAgua = d;
+    this.recalcularSuelo();
+  }
+
+  // distancia (en pasos, rodeando paredes) desde cada celda hasta la comida más cercana (silvestre ≥ 1 o cultivo maduro)
+  recalcularComida() {
+    const W = this.cfg.ancho, H = this.cfg.alto, d = new Int16Array(W * H).fill(-1), cola = [];
+    for (let i = 0; i < W * H; i++) if (this.valorComida(i) >= 0.5) { d[i] = 0; cola.push(i); }
+    for (let q = 0; q < cola.length; q++) {
+      const i = cola[q], x = i % W, y = (i / W) | 0; if (d[i] >= 14) continue;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const j = ny * W + nx; if (d[j] === -1 && this.tipo[j] !== PARED) { d[j] = d[i] + 1; cola.push(j); }
+      }
+    }
+    this.distComida = d;
+  }
+
+  pintar(x, y, herramienta, tam) {
+    const W = this.cfg.ancho, H = this.cfg.alto;
+    for (let dy = -(tam - 1); dy <= tam - 1; dy++) for (let dx = -(tam - 1); dx <= tam - 1; dx++) {
+      const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const i = ny * W + nx;
+      if (herramienta === "pared") this.tipo[i] = PARED;
+      else if (herramienta === "agua") {
+        this.tipo[i] = AGUA;
+        // el agua pintada crea una orilla fértil (como los oasis del mapa): muy fértil al lado, menos hasta 4 casillas
+        for (let oy = -4; oy <= 4; oy++) for (let ox = -4; ox <= 4; ox++) {
+          const fx = nx + ox, fy = ny + oy; if (fx < 0 || fy < 0 || fx >= W || fy >= H) continue;
+          const j = fy * W + fx, d2 = ox * ox + oy * oy, f = 0.95 * Math.exp(-d2 / 8);
+          if (this.tipo[j] === TIERRA && f > this.fert[j]) { this.fert[j] = f; this.capComida[j] = 1 + 9 * f; }
+        }
+      }
+      else if (herramienta === "borrar") this.tipo[i] = TIERRA;
+      else if (herramienta === "fertil") { this.tipo[i] = TIERRA; this.fert[i] = 1; }
+      else if (herramienta === "yermo") { this.tipo[i] = TIERRA; this.fert[i] = 0; }
+      this.capComida[i] = 1 + 9 * this.fert[i]; this.comida[i] = this.tipo[i] === TIERRA ? Math.min(this.comida[i], this.capComida[i]) : 0;
+      this.cultivo[i] = 0; this.cultivoEdad[i] = 0; this.riego[i] = 0; this.seco[i] = 0; this.dueno[i] = 0;
+      if (this.casa[i] > 0) this.hogares.delete(this.casa[i]); this.casa[i] = 0;
+    }
+    this.recalcularAgua();
+  }
+
+  pasoHacia(a, tx, ty) {
+    const W = this.cfg.ancho, H = this.cfg.alto;
+    const opciones = [[Math.sign(tx - a.x), Math.sign(ty - a.y)], [Math.sign(tx - a.x), 0], [0, Math.sign(ty - a.y)]];
+    for (const [dx, dy] of opciones) {
+      if (!dx && !dy) continue;
+      if (this.mover(a, a.x + dx, a.y + dy)) return;
+    }
+  }
+  // La cadena de la agricultura: solo se siembra en tierra fértil (fertilidad ≥ 0,15) con agua a 5 casillas o menos.
+  enOrilla(i) { return this.distAgua[i] >= 0 && this.distAgua[i] <= 2; }                       // junto al agua: riego natural
+  sembrable(i) { return this.tipo[i] === TIERRA && this.cultivo[i] === 0 && this.casa[i] === 0 && this.fert[i] >= 0.15 && this.distAgua[i] >= 0; }   // tierra fértil sin casa, con agua alcanzable por algún camino
+  necesitaRiego(i) { return this.cultivo[i] > 0 && this.cultivo[i] < 1 && !this.enOrilla(i) && this.riego[i] < 0.5; }
+
+  // cuánta tierra cultivable hay alrededor de cada casilla (radio 3, hasta 48 casillas); se recalcula cuando cambia el mapa
+  recalcularSuelo() {
+    const W = this.cfg.ancho, H = this.cfg.alto, s = new Int16Array(W * H);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      let n = 0;
+      for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+        const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || !(dx || dy)) continue;
+        const i = ny * W + nx; if (this.tipo[i] === TIERRA && this.fert[i] >= 0.15) n++;
+      }
+      s[y * W + x] = n;
+    }
+    this.suelo = s;
+  }
+
+  // Hogares: una casa aloja hasta personasPorCasa. Unirse a una con sitio es instintivo (techo); construir, y dónde, lo decide el cerebro.
+  hogarConSitio(a, radio) {
+    const W = this.cfg.ancho, H = this.cfg.alto; let mejor = 0, md = 99;
+    for (let dy = -radio; dy <= radio; dy++) for (let dx = -radio; dx <= radio; dx++) {
+      const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const id = this.casa[ny * W + nx]; if (!id) continue;
+      const h = this.hogares.get(id); if (!h || h.miembros.size >= this.cfg.personasPorCasa) continue;
+      const d = Math.max(Math.abs(dx), Math.abs(dy)); if (d < md) { md = d; mejor = id; }
+    }
+    return mejor;
+  }
+  unirse(a, id, forzar) {
+    const h = this.hogares.get(id); if (!h || (!forzar && h.miembros.size >= this.cfg.personasPorCasa)) return false;
+    h.miembros.add(a.id); a.casa = id; this.casaVaciaMeses[h.i] = 0; return true;
+  }
+  // Construir casa donde está: cualquier tierra sin casa (no pared ni agua). Si es fértil, esa parcela deja de poder cultivarse.
+  construirCasa(a) {
+    const i = a.y * this.cfg.ancho + a.x;
+    if (a.casa || this.tipo[i] !== TIERRA || this.casa[i] || a.comida < this.cfg.costoCasa) return false;
+    a.comida -= this.cfg.costoCasa; const id = this.siguienteHogar++;
+    this.hogares.set(id, { id, i, miembros: new Set([a.id]) }); this.casa[i] = id; a.casa = id;
+    this.cultivo[i] = 0; this.dueno[i] = 0; this.comida[i] = 0; this.casasConstruidas++; return true;
+  }
+
+  casasCerca(i, r) {
+    const W = this.cfg.ancho, H = this.cfg.alto, x = i % W, y = (i / W) | 0; let n = 0;
+    for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { const nx = x + dx, ny = y + dy; if (nx >= 0 && ny >= 0 && nx < W && ny < H && this.casa[ny * W + nx] > 0) n++; }
+    return n;
+  }
+  // Migración: sin hogar ni sitio cerca, elige tierra nueva a 8 casillas o más: cultivable, con agua a ≤ 12 y poco poblada.
+  elegirDestino(a) {
+    const W = this.cfg.ancho, H = this.cfg.alto; let mejor = 4, mi = -1;
+    for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) {
+      const i = y * W + x, d = Math.max(Math.abs(x - a.x), Math.abs(y - a.y));
+      if (d < 8 || this.tipo[i] !== TIERRA || this.casa[i] || this.distAgua[i] < 2 || this.distAgua[i] > 12) continue;
+      const v = this.suelo[i] - 3 * this.casasCerca(i, 3) - 0.15 * d;
+      if (v > mejor) { mejor = v; mi = i; }
+    }
+    if (mi < 0) return false;
+    a.destino = mi; a.atascado = 0; this.migraciones++; return true;
+  }
+  // Camina hacia su destino; al llegar funda un hogar allí (o al lado si la casilla ya no sirve). Si se atasca un año, desiste.
+  migrar(a) {
+    const W = this.cfg.ancho, tx = a.destino % W, ty = (a.destino / W) | 0, d = Math.max(Math.abs(a.x - tx), Math.abs(a.y - ty));
+    if (d <= 1) {
+      if (!this.construirCasa(a) && d === 1 && !this.ocupado[a.destino] && this.mover(a, tx, ty)) this.construirCasa(a);
+      a.destino = -1; return;
+    }
+    const px = a.x, py = a.y; this.pasoHacia(a, tx, ty);
+    if (a.x === px && a.y === py && ++a.atascado > 12) a.destino = -1;
+  }
+
+  // Busca un cultivo que necesite riego hasta 6 casillas a la redonda. Devuelve la celda o -1.
+  cultivoSecoCerca(a) {
+    const W = this.cfg.ancho, H = this.cfg.alto; let mejor = -1, md = 99;
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+      const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const i = ny * W + nx, d = Math.max(Math.abs(dx), Math.abs(dy));
+      if (d < md && this.necesitaRiego(i)) { md = d; mejor = i; }
+    }
+    return mejor;
+  }
+
+  // cuánta comida se puede sacar de una celda: un cultivo maduro vale su rendimiento, uno en crecimiento nada
+  valorComida(i) { return this.tipo[i] !== TIERRA || this.casa[i] ? 0 : this.cultivo[i] >= 1 ? this.cfg.rendimientoCultivo : this.cultivo[i] > 0 ? 0 : this.comida[i]; }
+
+  // Instinto de hambre: va hacia la mejor comida (cantidad / distancia) hasta 6 casillas a la redonda.
+  // Si un muro le impide avanzar en línea recta, sigue el mapa de distancias, que rodea paredes.
+  irAComidaLejos(a) {
+    const W = this.cfg.ancho, H = this.cfg.alto; let mejor = 0, tx = a.x, ty = a.y;
+    for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+      const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || !(dx || dy)) continue;
+      const i = ny * W + nx; if (this.tipo[i] !== TIERRA) continue;
+      const v = this.valorComida(i) / (1 + 0.25 * Math.max(Math.abs(dx), Math.abs(dy)));
+      if (v > mejor) { mejor = v; tx = nx; ty = ny; }
+    }
+    if (mejor > 0.5) {
+      const px = a.x, py = a.y; this.pasoHacia(a, tx, ty);
+      if (a.x !== px || a.y !== py) return true;
+    }
+    // bloqueado o sin comida a la vista: sigue el mapa de distancias (hasta 14 pasos rodeando muros)
+    const aqui = a.y * W + a.x, d0 = this.distComida[aqui]; if (d0 <= 0) return false;
+    let bx = a.x, by = a.y, bd = d0;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const j = ny * W + nx, d = this.distComida[j]; if (d >= 0 && d < bd && !this.ocupado[j]) { bd = d; bx = nx; by = ny; }
+    }
+    if (bd === d0) return false;
+    return this.mover(a, bx, by);
+  }
+
+  // Instinto de pareja: un adulto con reservas y energía se acerca a alguien del otro sexo que vea cerca.
+  // Devuelve true si dio un paso hacia esa persona (si ya está al lado, no hace falta moverse).
+  buscarPareja(a, enCelda) {
+    const c = this.cfg, W = c.ancho, H = c.alto;
+    if (a.edad < c.edadAdulta || a.gestando > 0 || a.energia < 50 || a.comida < c.costoRepro * 0.5 || rnd() < 0.4) return false;
+    const otro = a.sexo === "M" ? "H" : "M"; let mejor = null, md = 99;
+    for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const b = enCelda(ny * W + nx);
+      if (b && b !== a && b.sexo === otro && b.edad >= c.edadAdulta && b.energia > 0 && b.sed > 0 && b.gestando === 0) {
+        const d = Math.max(Math.abs(dx), Math.abs(dy)); if (d < md) { md = d; mejor = b; }
+      }
+    }
+    if (!mejor || md <= 1) return false;
+    this.pasoHacia(a, mejor.x, mejor.y); return true;
+  }
+
+  pasoAzar(a) {
+    this.mover(a, a.x + Math.floor(rnd() * 3) - 1, a.y + Math.floor(rnd() * 3) - 1);
+  }
+
+  paso() {
+    const c = this.cfg, W = c.ancho, H = c.alto, ag = this.agentes;
+    RNG.actual = this.rng;
+    for (let i = 0; i < W * H; i++) {
+      if (this.casa[i] > 0) {   // casilla con casa: no produce comida; si lleva 10 años sin nadie, la ruina desaparece
+        const h = this.hogares.get(this.casa[i]);
+        if (!h || (h.miembros.size === 0 && ++this.casaVaciaMeses[i] > 120)) { this.hogares.delete(this.casa[i]); this.casa[i] = 0; this.casaVaciaMeses[i] = 0; }
+        else { if (h.miembros.size) this.casaVaciaMeses[i] = 0; this.comida[i] = 0; continue; }
+      }
+      if (this.tipo[i] === AGUA) this.agua[i] = Math.min(10, this.agua[i] + 2);
+      else if (this.tipo[i] !== TIERRA) continue;
+      else if (this.cultivo[i] > 0) {   // el cultivo necesita agua: en la orilla la tiene sola; lejos, alguien debe traerla
+        if (this.enOrilla(i)) this.riego[i] = 1; else this.riego[i] = Math.max(0, this.riego[i] - 1 / 6);   // un riego dura unos 6 meses
+        if (this.riego[i] <= 0) { if (++this.seco[i] > c.mesesSecado) { this.cultivo[i] = 0; this.cultivoEdad[i] = 0; this.seco[i] = 0; this.dueno[i] = 0; } }   // sin agua se seca y la parcela vuelve a ser silvestre
+        else {
+          this.seco[i] = 0;
+          if (this.cultivo[i] < 1) this.cultivo[i] = Math.min(1, this.cultivo[i] + this.fert[i] / c.tiempoCultivo);   // crece según la fertilidad
+          else if (++this.cultivoEdad[i] > 2 * ANIO) { this.cultivo[i] = 0; this.cultivoEdad[i] = 0; this.dueno[i] = 0; }   // maduro sin cosechar dos años: se pudre
+        }
+      }
+      else this.comida[i] = Math.min(this.capComida[i], this.comida[i] + c.regen * this.capComida[i]);
+    }
+    this.recalcularComida();
+    const porId = new Map(); for (const a of ag) porId.set(a.id, a);
+    const enCelda = i => { const id = this.ocupado[i]; return id ? porId.get(id) || null : null; };   // quién está en una casilla (una persona como máximo)
+    for (let i = ag.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [ag[i], ag[j]] = [ag[j], ag[i]]; }
+
+    let produccion = 0, ataques = 0; const nacidos = [];
+    for (const a of ag) {
+      if (a.energia <= 0 || a.sed <= 0) continue;
+      const [fuerza, inte, resis] = a.genes;
+      const px = a.x, py = a.y; a.movio = false;
+      a.edad++;
+      if (a.descanso > 0) a.descanso--;
+      if (c.contagio > 0) {   // enfermedades (Sugarscape): drenan energía, se contagian a los vecinos; la resistencia acorta la enfermedad
+        if (a.enfermo > 0) {
+          a.enfermo--; a.energia -= 1.5;
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            if (!dx && !dy) continue; const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+            const b = enCelda(ny * W + nx); if (b && !b.enfermo && rnd() < c.contagio) { b.enfermo = Math.max(2, Math.round(6 / b.genes[2])); this.enfermosTotal++; }
+          }
+        } else if (rnd() < 0.0005) { a.enfermo = Math.max(2, Math.round(6 / a.genes[2])); this.enfermosTotal++; }   // brotes espontáneos raros
+      }
+      if (a.casa && !this.hogares.has(a.casa)) a.casa = 0;   // su hogar desapareció (por ejemplo, alguien pintó encima)
+      if (a.edad === c.edadAdulta && a.casa) {               // al hacerse adulto, si el hogar está lleno se independiza: necesita su propio espacio
+        const h = this.hogares.get(a.casa);
+        if (h && h.miembros.size >= c.personasPorCasa - 1) { h.miembros.delete(a.id); a.casa = 0; }
+      }
+      if (!a.casa && a.edad >= c.edadAdulta) a.energia -= 1;  // sin techo se gasta más: hay presión por construir o unirse a un hogar
+      if (a.gestando > 0 && --a.gestando === 0) {        // nace el hijo al terminar el embarazo
+        a.descanso = c.descansoHijos;                    // un año de descanso antes de otro embarazo
+        if (ag.length + nacidos.length < c.maxPob) {
+          a.hijos++; this.nacimientos++; this.nacVentana++;
+          const genes = mutarGenes(a.genes.map((g, k) => (g + a.padre.genes[k]) / 2));
+          const sitio = this.celdaLibreCerca(a.x, a.y, 3);   // el hijo nace en una casilla libre junto a la madre
+          if (sitio) {
+            const h = this.nuevoAgente(sitio, Cerebro.cruzar(a.cerebro, a.padre.cerebro).mutado(), genes, a.gen + 1, c.costoRepro * 0.5, 2);
+            this.ocupado[h.y * W + h.x] = h.id; nacidos.push(h);
+            this.unirse(h, a.casa, true);                      // el hijo entra siempre en el hogar de la madre (se apretujan hasta que sea adulto)
+          }
+        }
+        a.padre = null;
+      }
+      a.energia -= c.gastoEnergia * (0.5 + 0.25 * fuerza + 0.25 * inte) * (1.5 - 0.5 * resis);
+      a.sed -= c.gastoSed * (1.3 - 0.3 * resis);
+      a.comida *= (1 - c.pudricion); a.agua *= (1 - c.evaporacion);
+      while (a.energia < 60 && a.comida >= 1) { a.comida -= 1; a.energia = Math.min(100, a.energia + c.energiaComida); }
+      while (a.sed < 60 && a.agua >= 1) { a.agua -= 1; a.sed = Math.min(100, a.sed + c.aguaTrago); }
+      if (a.energia <= 0 || a.sed <= 0) continue;
+      if (this.tipo[a.y * W + a.x] === PARED) { this.pasoAzar(a); }   // alguien pintó una pared encima
+      const dAquiAgua = this.distAgua[a.y * W + a.x];
+      if (dAquiAgua >= 0 && dAquiAgua <= 2) { if (a.sed < 95) a.sed = 100; if (a.agua < 6) a.agua = 6; }   // a 2 casillas del agua o menos: bebe y llena el cántaro (lo que se aprende es llevarlo a los cultivos)
+
+      // percepción: la inteligencia amplía el radio de visión
+      const radio = inte >= 1.25 ? 2 : 1;
+      let mejorCom = -1, mx = a.x, my = a.y, vecino = null, vecinoAgua = null;
+      for (let dy = -radio; dy <= radio; dy++) for (let dx = -radio; dx <= radio; dx++) {
+        const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+        const i = ny * W + nx;
+        if ((dx || dy) && this.tipo[i] === TIERRA) { const v = this.valorComida(i); if (v > mejorCom) { mejorCom = v; mx = nx; my = ny; } }
+        if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1 && (dx || dy)) { const b = enCelda(i); if (b && b.energia > 0 && b.sed > 0) { if (!vecino || b.comida > vecino.comida) vecino = b; if (!vecinoAgua || b.agua > vecinoAgua.agua) vecinoAgua = b; } }
+      }
+      const aqui = a.y * W + a.x, dAgua = this.distAgua[aqui];
+      // Techo: quien no tiene hogar se une al que tenga sitio en su casilla o al lado; si no, sabe si hay uno hasta 6 casillas
+      let hogarCerca = 0;
+      if (!a.casa) { const cercano = this.hogarConSitio(a, 1); if (cercano) this.unirse(a, cercano); else hogarCerca = this.hogarConSitio(a, 6); }
+      const distCasa = a.casa ? (h => Math.max(Math.abs(a.x - h.i % W), Math.abs(a.y - ((h.i / W) | 0))))(this.hogares.get(a.casa)) : 0;
+      const entradas = [a.energia / 100, a.sed / 100, Math.min(1, a.comida / 50), Math.min(1, a.agua / 30),
+        Math.min(1, this.valorComida(aqui) / 10), Math.min(1, Math.max(0, mejorCom) / 10), this.agua[aqui] / 10, dAgua >= 0 ? 1 / (1 + dAgua) : 0,
+        a.herr / c.maxHerr, a.def / c.maxDef, vecino ? 1 : 0, vecino ? Math.min(1, vecino.comida / 50) : 0, vecino ? vecino.def / c.maxDef : 0,
+        fuerza / 2, a.habilidad, this.cultivo[aqui], this.sembrable(aqui) ? 1 : 0, this.cultivoSecoCerca(a) >= 0 ? 1 : 0,
+        a.casa ? 1 : 0, Math.min(1, distCasa / 10), this.fert[aqui], this.suelo[aqui] / 48, hogarCerca ? 1 : 0,
+        this.cultivo[aqui] > 0 && this.dueno[aqui] && this.dueno[aqui] !== a.id ? 1 : 0,   // el cultivo de aquí es de otro
+        vecinoAgua ? Math.min(1, vecinoAgua.agua / 10) : 0, 1];                               // cuánta agua carga el vecino (para comerciar)
+      // Reflejos de supervivencia: con mucha sed va al agua, con mucha hambre y sin reservas recoge comida.
+      // Todo lo demás (ahorrar, invertir, atacar, dónde ir) lo decide el cerebro aprendido.
+      // Regar: quien pisa un cultivo seco llevando agua lo riega (2 de agua cargada = unos 6 meses de riego)
+      if (this.necesitaRiego(aqui) && a.agua >= 2) { a.agua -= 2; this.riego[aqui] = 1; this.riegos++; }
+      let accion;
+      if (a.sed < 40 && dAgua > 2) accion = 1;                                                      // sed: acercarse al agua
+      else if (a.comida < 5 || a.energia < 45) accion = this.valorComida(aqui) > 0.5 ? 2 : this.irAComidaLejos(a) ? -1 : 7;   // sin reserva: asegurar comida antes que nada
+      else if (a.destino >= 0) { this.migrar(a); accion = -1; }                                   // en camino a fundar un hogar en tierra nueva
+      else if (!a.casa && hogarCerca && rnd() < 0.6) { const h = this.hogares.get(hogarCerca); this.pasoHacia(a, h.i % W, (h.i / W) | 0); accion = -1; }   // sin techo: va hacia un hogar con sitio (se une al llegar)
+      else if (!a.casa && a.edad >= c.edadAdulta && !hogarCerca && a.comida >= c.costoCasa && rnd() < 0.5 && this.elegirDestino(a)) { this.migrar(a); accion = -1; }   // sin sitio cerca: emigra
+      else if (!a.casa && a.edad >= c.edadAdulta && !hogarCerca && a.comida >= c.costoCasa) { if (!this.construirCasa(a)) this.pasoAzar(a); accion = -1; }   // todos necesitan hogar: si no hay otra, construye donde está
+      else if (a.casa && distCasa > 6 && rnd() < 0.5) { const h = this.hogares.get(a.casa); this.pasoHacia(a, h.i % W, (h.i / W) | 0); accion = -1; }   // lejos de casa: vuelve
+      else if (this.buscarPareja(a, enCelda)) accion = -1;                                          // pareja: ya dio el paso
+      else accion = a.cerebro.decidir(entradas);
+      a.accion = accion;
+
+      if (accion === 0) { if (mejorCom > 0) this.pasoHacia(a, mx, my); else this.pasoAzar(a); }
+      else if (accion === 1) {
+        if (dAgua > 2) {                                   // siempre saben hacia dónde queda el agua más cercana; basta acercarse a 2 casillas
+          let bx = a.x, by = a.y, bd = dAgua; const laterales = [];
+          for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+            const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H || !(dx || dy)) continue;
+            const j = ny * W + nx, d = this.distAgua[j]; if (d < 0 || this.ocupado[j]) continue;
+            if (d < bd) { bd = d; bx = nx; by = ny; } else if (d === dAgua) laterales.push([nx, ny]);
+          }
+          if (bd < dAgua) this.mover(a, bx, by);
+          else if (laterales.length) { const l = laterales[Math.floor(rnd() * laterales.length)]; this.mover(a, l[0], l[1]); }   // bloqueado: rodea
+        } else if (dAgua < 0) this.pasoAzar(a);
+      }
+      else if (accion === 2) {
+        if (this.tipo[aqui] === TIERRA && this.cultivo[aqui] >= 1) {                    // cosechar un cultivo maduro
+          const dueno = this.dueno[aqui] && this.dueno[aqui] !== a.id ? porId.get(this.dueno[aqui]) : null;
+          let puede = true;
+          if (c.propiedadPrivada && dueno && dueno.energia > 0 && dueno.sed > 0) {       // propiedad privada: cosechar lo ajeno es un robo que el dueño repele con su defensa
+            a.energia -= c.costoAtaque; ataques++; this.ataquesIntentos++;
+            const fa = c.eficaciaAtaque * fuerza, fd = (0.5 + dueno.def) * dueno.genes[0];
+            puede = fa > 0 && rnd() < fa / (fa + fd);
+            if (puede) { this.ataquesOk++; this.robosCosecha++; } else a.energia -= 4;
+            this.flashes.push({ x1: a.x, y1: a.y, x2: dueno.x, y2: dueno.y, ok: puede, ttl: 10 });
+          }
+          if (puede) {
+            const q = c.rendimientoCultivo * (0.75 + 0.25 * inte) * (1 + 0.3 * a.habilidad);
+            this.cultivo[aqui] = 0; this.cultivoEdad[aqui] = 0; this.dueno[aqui] = 0; a.comida += q; produccion += q; this.cosechas++;
+            a.habilidad = Math.min(1, a.habilidad + 0.02);
+          }
+        } else if (this.tipo[aqui] === TIERRA && this.cultivo[aqui] === 0 && this.comida[aqui] > 0) {   // recolectar comida silvestre
+          const q = Math.min(this.comida[aqui], (1 + 0.5 * a.herr) * (0.75 + 0.25 * inte) * (1 + 0.5 * a.habilidad));
+          this.comida[aqui] -= q; a.comida += q; produccion += q; a.habilidad = Math.min(1, a.habilidad + 0.01);
+        }
+      }
+      else if (accion === 8) {                                                            // sembrar: gasta semillas de su reserva
+        if (this.sembrable(aqui) && a.comida >= c.costoSemilla) {
+          a.comida -= c.costoSemilla; this.cultivo[aqui] = 0.001; this.cultivoEdad[aqui] = 0; this.comida[aqui] = 0; this.dueno[aqui] = a.id; this.siembras++;
+        }
+      }
+      else if (accion === 3) { if (dAgua >= 0 && dAgua <= 2) a.agua += 2 + 0.5 * a.herr; }   // recoger agua extra cerca del agua
+      else if (accion === 4) { if (a.herr < c.maxHerr && a.comida >= c.costoHerr) { a.comida -= c.costoHerr; a.herr++; } }
+      else if (accion === 5) { if (a.def < c.maxDef && a.comida >= c.costoDef) { a.comida -= c.costoDef; a.def++; } }
+      else if (accion === 6) {
+        if (vecino && a.energia > c.costoAtaque) {
+          a.energia -= c.costoAtaque; ataques++; this.ataquesIntentos++;
+          const fa = c.eficaciaAtaque * fuerza, fd = (0.5 + vecino.def) * vecino.genes[0];
+          const ok = fa > 0 && rnd() < fa / (fa + fd);
+          if (ok) { const r = vecino.comida * c.botin, ra = vecino.agua * c.botin; vecino.comida -= r; vecino.agua -= ra; a.comida += r; a.agua += ra; this.robado += r; this.ataquesOk++; }
+          else a.energia -= 4;
+          this.flashes.push({ x1: a.x, y1: a.y, x2: vecino.x, y2: vecino.y, ok, ttl: 10 });
+        }
+      }
+      else if (accion === 9) {                                                            // ir a regar: lleva el agua cargada hasta un cultivo seco
+        const i = a.agua >= 2 ? this.cultivoSecoCerca(a) : -1;
+        if (i >= 0) this.pasoHacia(a, i % W, (i / W) | 0); else this.pasoAzar(a);
+      }
+      else if (accion === 10) this.construirCasa(a);                                     // construir casa aquí (decisión aprendida: dónde)
+      else if (accion === 11) {                                                           // comerciar (Sugarscape): comida por agua con un vecino si a los dos les conviene
+        const b = vecinoAgua;
+        if (b) {
+          const mrsA = (a.comida + 0.5) / (a.agua + 0.5), mrsB = (b.comida + 0.5) / (b.agua + 0.5);   // cuánta comida da cada uno por una unidad de agua
+          let p = 0;
+          const precio = clamp(Math.sqrt(mrsA * mrsB), 0.2, 5);
+          if (mrsA > mrsB * 1.1 && a.comida >= precio + 1 && b.agua >= 3) { p = precio; a.comida -= p; a.agua += 1; b.comida += p; b.agua -= 1; }   // a compra agua (solo si puede pagarla)
+          else if (mrsB > mrsA * 1.1 && b.comida >= precio + 1 && a.agua >= 3) { p = precio; b.comida -= p; b.agua += 1; a.comida += p; a.agua -= 1; }   // a vende agua
+          if (p) { this.intercambios++; this.sumaPrecio += p; this.intV++; this.precioV += p; }
+        }
+      }
+      else if (accion === 7) this.pasoAzar(a);
+      a.movio = a.x !== px || a.y !== py;
+      if (a.x !== px) a.dir = a.x > px ? 1 : -1;
+
+      // Concepción: una mujer adulta, no embarazada y con energía, con un hombre adulto en su casilla o al lado,
+      // y entre los dos reúnen la comida que cuesta criar. Nadie se reproduce solo.
+      if (a.sexo === "M" && a.casa && a.gestando === 0 && a.descanso === 0 && a.edad >= c.edadAdulta && a.edad <= c.edadFertil && a.energia >= 50 && ag.length + nacidos.length < c.maxPob) {   // criar exige tener hogar
+        let pareja = null;
+        for (let dy = -1; dy <= 1 && !pareja; dy++) for (let dx = -1; dx <= 1 && !pareja; dx++) {
+          if (!dx && !dy) continue;
+          const nx = a.x + dx, ny = a.y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const b = enCelda(ny * W + nx);
+          if (b && b.sexo === "H" && b.edad >= c.edadAdulta && b.energia > 0 && b.sed > 0) pareja = b;
+        }
+        if (pareja && a.comida + pareja.comida >= c.costoRepro && rnd() < c.fertilidad) {   // la tasa de fertilidad decide si ese mes hay concepción
+          const delPadre = Math.min(pareja.comida, c.costoRepro / 2); pareja.comida -= delPadre; a.comida -= c.costoRepro - delPadre;
+          a.gestando = c.tiempoGestacion; a.padre = { genes: pareja.genes, cerebro: pareja.cerebro }; pareja.hijos++;
+        }
+      }
+    }
+
+    if (c.impuesto > 0 && this.turno % Math.max(1, c.frecuenciaReparto | 0) === 0) {   // recaudación y reparto por igual
+      let caja = 0, vivos = 0; const activos = ag.filter(a => a.energia > 0 && a.sed > 0);
+      for (const a of activos) { const t = a.comida * c.impuesto; a.comida -= t; caja += t; vivos++; }
+      if (c.repartoNecesidad) {   // según necesidad: primero se lleva a 8 de reserva a quienes están por debajo, empezando por los que menos tienen
+        for (const a of activos.slice().sort((p, q) => p.comida - q.comida)) { if (caja <= 0 || a.comida >= 8) break; const d = Math.min(8 - a.comida, caja); a.comida += d; caja -= d; }
+      }
+      if (vivos && caja > 0) for (const a of activos) a.comida += caja / vivos;   // el resto, por igual
+    }
+
+    const vivos = [];
+    for (const a of ag) {
+      // Vejez como en humanos: a partir del 60 % de la esperanza de vida el riesgo de morir cada mes sube con la edad
+      const umbral = 0.6 * c.maxEdad, riesgo = a.edad > umbral ? 0.02 * ((a.edad - umbral) / (0.4 * c.maxEdad)) ** 2 : 0;
+      const muereVejez = a.edad > c.maxEdad || rnd() < riesgo;
+      if (a.energia > 0 && a.sed > 0 && !muereVejez) { vivos.push(a); continue; }
+      if (a.energia <= 0) this.mHambre++; else if (a.sed <= 0) this.mSed++; else this.mVejez++;
+      this.sumaEdadMuerte += a.edad; this.nMuertes++;
+      if (a.energia <= 0) this.vm.h++; else if (a.sed <= 0) this.vm.s++; else this.vm.v++;
+      if (a.sexo === "H") { this.vm.hom++; this.vm.edadHom += a.edad; } else { this.vm.muj++; this.vm.edadMuj += a.edad; }
+      if (this.ocupado[a.y * W + a.x] === a.id) this.ocupado[a.y * W + a.x] = 0;      // deja libre la casilla
+      if (a.casa) {
+        const h = this.hogares.get(a.casa);
+        if (h) {
+          h.miembros.delete(a.id);
+          if (c.herencia && a.comida > 0 && h.miembros.size) {   // herencia (Sugarscape): la reserva pasa a los miembros vivos de su hogar
+            const herederos = [...h.miembros].map(id => porId.get(id)).filter(b => b && b.energia > 0 && b.sed > 0);
+            if (herederos.length) { const parte = a.comida / herederos.length; for (const b of herederos) b.comida += parte; }
+          }
+        }
+      }   // deja su hogar; si queda vacío otro puede ocuparlo
+      // al morir, por la causa que sea, desaparece del mundo; queda un fantasma breve solo como aviso visual
+      this.fantasmas.push({ x: a.x, y: a.y, nace: performance.now(), vejez: a.edad > c.maxEdad });
+      if (this.fantasmas.length > 300) this.fantasmas.splice(0, this.fantasmas.length - 300);
+      this.salon.push({ hijos: a.hijos, edad: a.edad, gen: a.gen, genes: a.genes, cerebro: a.cerebro });
+      this.salon.sort((p, q) => q.hijos - p.hijos || q.edad - p.edad); if (this.salon.length > 8) this.salon.length = 8;
+    }
+    this.agentes = vivos.concat(nacidos);
+    // Sin repoblación automática: si no queda nadie, o no quedan hombres y mujeres adultos, el mundo se extingue.
+    if (!this.extinto) {
+      const h = this.agentes.some(a => a.sexo === "H"), m = this.agentes.some(a => a.sexo === "M"), emb = this.agentes.some(a => a.gestando > 0);
+      if (this.agentes.length === 0) { this.extinto = true; this.motivoExtincion = "No queda nadie."; }
+      else if ((!h || !m) && !emb) { this.extinto = true; this.motivoExtincion = `Ya no quedan ${h ? "mujeres" : "hombres"} y nadie está embarazada: sin parejas no habrá más nacimientos.`; }
+      if (this.extinto) {   // diagnóstico: qué pasó, con los datos del propio mundo
+        this.diagnostico = this.diagnosticoExtincion();
+        registrar(`${this.nombre}, año ${(this.turno / ANIO).toFixed(1)}: ${this.motivoExtincion} Qué pasó:`);
+        for (const l of this.diagnostico) registrar("  · " + l);
+      }
+    }
+    this.turno++; this.prodAcum += produccion; this.ataqAcum += ataques;
+    for (const f of this.flashes) f.ttl--; this.flashes = this.flashes.filter(f => f.ttl > 0);
+    if (this.turno % 5 === 0) this.muestrear();
+  }
+
+  // Ciudades: grupos de casas (ocupadas o vacías) a 2 casillas o menos unas de otras; ciudad = grupo de 5 o más
+  ciudades() {
+    const W = this.cfg.ancho, H = this.cfg.alto, visto = new Uint8Array(W * H); let n = 0, mayor = 0, casas = 0, vacias = 0;
+    for (let i = 0; i < W * H; i++) if (this.casa[i] > 0) { const h = this.hogares.get(this.casa[i]); if (h && h.miembros.size) casas++; else vacias++; }
+    for (let i = 0; i < W * H; i++) {
+      if (this.casa[i] === 0 || visto[i]) continue;
+      const cola = [i]; visto[i] = 1; let tam = 0;
+      for (let q = 0; q < cola.length; q++) {
+        const j = cola[q], x = j % W, y = (j / W) | 0; tam++;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+          const nx = x + dx, ny = y + dy; if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const k = ny * W + nx; if (this.casa[k] !== 0 && !visto[k]) { visto[k] = 1; cola.push(k); }
+        }
+      }
+      if (tam >= 5) n++; if (tam > mayor) mayor = tam;
+    }
+    return { n, mayor, casas, vacias };
+  }
+
+  // Explica una extinción contando la historia en orden: trayectoria, balance de los últimos 50 años, por qué dejaron de nacer niños,
+  // por qué se acabó un sexo, y qué reglas o condiciones del mapa influyeron. Usa los datos de las ventanas de muestreo.
+  diagnosticoExtincion() {
+    const h = this.historia, c = this.cfg, L = [], n = h.length; if (n < 2) return ["No hay datos suficientes para explicarlo."];
+    const A = t => (t / ANIO).toFixed(0), f0 = x => (+x).toFixed(0), f1 = x => (+x).toFixed(1);
+    const prom = (arr, k) => arr.length ? arr.reduce((s, x) => s + (+x[k] || 0), 0) / arr.length : 0;
+    const suma = (arr, k) => arr.reduce((s, x) => s + (+x[k] || 0), 0);
+    const porAnio = 12;   // muestras por año (cada 5 meses, 12 meses)
+    let pico = h[0]; for (const x of h) if (x.pob > pico.pob) pico = x;
+    const ult = h.slice(Math.max(0, n - 50 * porAnio)), prev = h.slice(Math.max(0, n - 100 * porAnio), Math.max(0, n - 50 * porAnio));
+    const anios = Math.min(50, Math.max(1, Math.round(this.turno / ANIO)));   // la ventana final: 50 años, o toda la historia si es más corta
+    const en = y => { const i = h.findIndex(x => x.t >= this.turno - y * ANIO); return i >= 0 ? h[i].pob : null; };
+    // 1. Trayectoria
+    const hitos = [200, 100, 50, 20, 10].filter(y => this.turno > y * ANIO).map(y => `hace ${y} años: ${en(y)}`);
+    L.push(`Trayectoria. Máximo de ${pico.pob} personas en el año ${A(pico.t)}. ${hitos.length ? "Población " + hitos.join(", ") + "." : ""}`);
+    // 2. Balance de los últimos 50 años
+    const nac = suma(ult, "nacV"), mh = suma(ult, "mh"), ms = suma(ult, "ms"), mv = suma(ult, "mv"), mt = mh + ms + mv;
+    const nacPrev = suma(prev, "nacV"), mtPrev = suma(prev, "mh") + suma(prev, "ms") + suma(prev, "mv");
+    L.push(`Balance de los últimos ${anios} años: nacieron ${nac} y murieron ${mt} (hambre ${mh}, sed ${ms}, vejez ${mv}).${prev.length ? ` En los 50 años anteriores: ${nacPrev} nacimientos y ${mtPrev} muertes.` : ""} ${nac < mt ? "La población no se reemplazaba." : "Los nacimientos aún compensaban, pero se concentraron en pocas familias."}`);
+    // 3. Por qué dejaron de nacer niños
+    const mf = prom(ult, "mujeresFertiles"), ha = prom(ult, "hombresAdultos"), tramoFinal = ult.slice(-10 * porAnio);
+    const mfFin = prom(tramoFinal, "mujeresFertiles"), haFin = prom(tramoFinal, "hombresAdultos");
+    const razones = [];
+    if (mfFin < 2 || haFin < 2) razones.push(`en los últimos 10 años había en promedio ${f1(mfFin)} mujeres en edad fértil y ${f1(haFin)} hombres adultos: casi no quedaban parejas posibles`);
+    else if (mf < 5 || ha < 5) razones.push(`en los últimos 50 años solo había en promedio ${f1(mf)} mujeres fértiles y ${f1(ha)} hombres adultos, dispersos por el mapa: hombre y mujer rara vez quedaban al lado`);
+    if (prom(ult, "ahorro") < c.costoRepro / 2) razones.push(`la reserva media de comida (${f1(prom(ult, "ahorro"))}) no alcanzaba para criar (hacen falta ${c.costoRepro} entre la pareja)`);
+    if (prom(ult, "sinCasa") > 25) razones.push(`el ${f0(prom(ult, "sinCasa"))} % de los adultos no tenía hogar y sin hogar no se puede criar`);
+    if (c.fertilidad < 0.1) razones.push(`la tasa de fertilidad estaba muy baja (${f0(c.fertilidad * 100)} % al mes)`);
+    if (prom(ult, "hambrientos") > 30) razones.push(`más del 30 % pasaba hambre y con energía baja no se concibe`);
+    if (!razones.length) razones.push("no hay una causa única: las pocas parejas que quedaban tuvieron hijos, pero menos que las muertes");
+    L.push(`Por qué dejaron de nacer niños: ${razones.join("; ")}.`);
+    // 4. Por qué se acabó un sexo
+    const mHom = suma(ult, "mHom"), mMuj = suma(ult, "mMuj"), eH = prom(ult.filter(x => x.mHom > 0), "edadMuerteHom"), eM = prom(ult.filter(x => x.mMuj > 0), "edadMuerteMuj");
+    const hombres = this.agentes.filter(a => a.sexo === "H").length, mujeres = this.agentes.length - hombres;
+    if (hombres === 0 || mujeres === 0) {
+      const faltan = hombres === 0 ? "los hombres" : "las mujeres";
+      L.push(`Por qué se acabaron ${faltan}: en los últimos ${anios} años murieron ${mHom} hombres (a los ${f0(eH)} años en promedio) y ${mMuj} mujeres (a los ${f0(eM)} años). ${Math.abs(eH - eM) >= 5 ? (eH < eM ? "Los hombres morían bastante antes." : "Las mujeres morían bastante antes.") : "Morían a edades parecidas."} Con tan pocos nacimientos, el azar del sexo de los últimos hijos decidió cuál se acababa primero: ahora quedan ${hombres} hombres y ${mujeres} mujeres.`);
+    }
+    // 5. Condiciones de fondo
+    if (mt && ms / mt >= 0.35) L.push("Condición de fondo: la sed mataba a muchos. Suele deberse a muros que cierran el paso, a vivir lejos del agua o a una orilla bloqueada por otras personas.");
+    if (mt && mh / mt >= 0.35) { const cp = prom(ult, "prod") / Math.max(1, prom(ult, "pob")); L.push(`Condición de fondo: el hambre mataba a muchos; la comida por persona era ${cp.toFixed(2)} al mes (hace falta unos 0,2 para no morir)${prom(ult, "cultivos") < 1 ? " y casi no había cultivos" : ""}.`); }
+    if (prom(ult, "ataq") > 5) L.push(`Condición de fondo: mucha violencia (${f1(prom(ult, "ataq"))} ataques por mes), que gasta energía y vacía reservas.`);
+    if (c.impuesto >= 0.6 && c.frecuenciaReparto <= 1) L.push("Condición de fondo: con un reparto mensual tan alto, producir más no cambia la reserva propia; la evolución deja de favorecer a quienes producen y la reserva media cae por debajo del costo de criar.");
+    if (mt && mv / mt >= 0.6 && mh / mt < 0.25 && ms / mt < 0.25) L.push("Condición de fondo: la mayoría murió de vieja, así que el problema no fue sobrevivir sino reemplazarse a tiempo.");
+    L.push(`Sistema económico: ${SISTEMAS[c.sistema] ? SISTEMAS[c.sistema].nombre : "personalizado"}; semilla ${this.semilla}. Con la misma semilla y perillas se repite exactamente igual.`);
+    return L;
+  }
+
+  muestrear() {
+    const ag = this.agentes, n = ag.length || 1, prom = f => ag.reduce((s, a) => s + f(a), 0) / n, ciu = this.ciudades();
+    this.historia.push({ t: this.turno, pob: ag.length, prod: this.prodAcum / 5, ataq: this.ataqAcum / 5, gini: gini(ag.map(a => a.comida)),
+      ahorro: prom(a => a.comida), aguaAh: prom(a => a.agua), herr: prom(a => a.herr), def: prom(a => a.def), hab: prom(a => a.habilidad),
+      fuerza: prom(a => a.genes[0]), inte: prom(a => a.genes[1]), resis: prom(a => a.genes[2]), gen: prom(a => a.gen),
+      cultivos: this.cultivo.reduce((s, v) => s + (v > 0 ? 1 : 0), 0), reservas: ag.reduce((s, a) => s + a.comida, 0),
+      hambrientos: 100 * ag.filter(a => a.energia < 30).length / n,
+      esperanza: this.nMuertes ? this.sumaEdadMuerte / this.nMuertes / ANIO : 0,      // edad media al morir (años) en la ventana
+      natalidad: 100 * this.nacVentana / n * (ANIO / 5),                               // nacimientos por 100 personas y año
+      casas: ciu.casas, casasVacias: ciu.vacias, ciudades: ciu.n, mayorCiudad: ciu.mayor,
+      sinCasa: (ad => ad.length ? 100 * ad.filter(a => !a.casa).length / ad.length : 0)(ag.filter(a => a.edad >= this.cfg.edadAdulta)),   // % de adultos sin hogar
+      nacV: this.nacVentana, mh: this.vm.h, ms: this.vm.s, mv: this.vm.v, mHom: this.vm.hom, mMuj: this.vm.muj,
+      edadMuerteHom: this.vm.hom ? this.vm.edadHom / this.vm.hom / ANIO : 0, edadMuerteMuj: this.vm.muj ? this.vm.edadMuj / this.vm.muj / ANIO : 0,
+      hombres: ag.filter(a => a.sexo === "H").length, mujeres: ag.filter(a => a.sexo === "M").length,
+      mujeresFertiles: ag.filter(a => a.sexo === "M" && a.edad >= this.cfg.edadAdulta && a.edad <= this.cfg.edadFertil).length,
+      hombresAdultos: ag.filter(a => a.sexo === "H" && a.edad >= this.cfg.edadAdulta).length,
+      intercambios: this.intV / 5, precioAgua: this.intV ? this.precioV / this.intV : 0, enfermos: 100 * ag.filter(a => a.enfermo > 0).length / n });
+    this.intV = 0; this.precioV = 0;
+    this.prodAcum = 0; this.ataqAcum = 0; this.sumaEdadMuerte = 0; this.nMuertes = 0; this.nacVentana = 0;
+    this.vm = { h: 0, s: 0, v: 0, hom: 0, muj: 0, edadHom: 0, edadMuj: 0 };
+  }
+
+  texto() {
+    const c = this.cfg, W = c.ancho, H = c.alto;
+    let t = `# SIMULADOR DE MUNDOS - ${this.nombre} - generado por mundos.html\n# 1 año = ${ANIO} turnos. Las edades y el turno estan en turnos.\n\n[CONFIG]\n`;
+    for (const k in c) t += `${k}=${c[k]}\n`;
+    t += `semilla=${this.semilla}\nsemilla_mapa=${this.semillaMapa}\n`;
+    t += `turno=${this.turno}\nnacimientos=${this.nacimientos}\nmuertes_hambre=${this.mHambre}\nmuertes_sed=${this.mSed}\nmuertes_vejez=${this.mVejez}\n`;
+    t += "\n# Mapa: . tierra, # pared, ~ agua. Fertilidad: 0 a 9 por celda.\n[MAPA]\n";
+    for (let y = 0; y < H; y++) { let f = ""; for (let x = 0; x < W; x++) f += [".", "#", "~"][this.tipo[y * W + x]]; t += f + "\n"; }
+    t += "\n[FERTILIDAD]\n";
+    for (let y = 0; y < H; y++) { let f = ""; for (let x = 0; x < W; x++) f += Math.round(this.fert[y * W + x] * 9); t += f + "\n"; }
+    t += `siembras=${this.siembras}\ncosechas=${this.cosechas}\nriegos=${this.riegos}\ncasas_construidas=${this.casasConstruidas}\nmigraciones=${this.migraciones}\n`;
+    t += "\n[ESTADISTICAS]\n# turno;poblacion;produccion;ataques;gini;ahorro;agua;herramienta;defensa;habilidad;fuerza;inteligencia;resistencia;generacion;cultivos;reservas;hambrientos;esperanza_vida;natalidad;casas;ciudades;mayor_ciudad;adultos_sin_hogar;nacimientos_ventana;muertes_hambre;muertes_sed;muertes_vejez;muertes_hombres;muertes_mujeres;hombres;mujeres;mujeres_fertiles;hombres_adultos;intercambios_mes;precio_agua;enfermos_pct\n";
+    for (const h of this.historia) t += [h.t, h.pob, h.prod.toFixed(2), h.ataq.toFixed(3), h.gini.toFixed(3), h.ahorro.toFixed(2), h.aguaAh.toFixed(2), h.herr.toFixed(2), h.def.toFixed(2), h.hab.toFixed(3), h.fuerza.toFixed(3), h.inte.toFixed(3), h.resis.toFixed(3), h.gen.toFixed(1), h.cultivos | 0, (h.reservas || 0).toFixed(1), (h.hambrientos || 0).toFixed(1), (h.esperanza || 0).toFixed(1), (h.natalidad || 0).toFixed(2), h.casas | 0, h.ciudades | 0, h.mayorCiudad | 0, (h.sinCasa || 0).toFixed(1), h.nacV | 0, h.mh | 0, h.ms | 0, h.mv | 0, h.mHom | 0, h.mMuj | 0, h.hombres | 0, h.mujeres | 0, h.mujeresFertiles | 0, h.hombresAdultos | 0, (h.intercambios || 0).toFixed(3), (h.precioAgua || 0).toFixed(3), (h.enfermos || 0).toFixed(1)].join(";") + "\n";
+    t += "\n[MEJORES_PERSONAS]\n# hijos;edad;generacion;fuerza,inteligencia,resistencia;pesos del cerebro\n";
+    const vivos = this.agentes.slice().sort((a, b) => b.hijos - a.hijos || b.edad - a.edad).slice(0, 8).map(a => ({ hijos: a.hijos, edad: a.edad, gen: a.gen, genes: a.genes, cerebro: a.cerebro }));
+    for (const s of vivos.concat(this.salon)) t += `${s.hijos};${s.edad};${s.gen};${s.genes.map(x => x.toFixed(3)).join(",")};${Array.from(s.cerebro.pesos, x => x.toFixed(4)).join(" ")}\n`;
+    return t;
+  }
+
+  cargar(txt) {
+    let sec = null; const personas = [], historia = [], mapa = [], fertil = [], extra = {};
+    for (let linea of txt.split(/\r?\n/)) {
+      linea = linea.trim(); if (!linea || linea.startsWith("# ") || linea.startsWith("#") && sec !== "MAPA") continue;
+      if (/^\[.*\]$/.test(linea)) { sec = linea.slice(1, -1); continue; }
+      if (sec === "CONFIG") { const i = linea.indexOf("="), k = linea.slice(0, i), v = +linea.slice(i + 1); if (k in BASE_CFG) this.cfg[k] = v; else extra[k] = v; }
+      else if (sec === "MAPA") mapa.push(linea);
+      else if (sec === "FERTILIDAD") fertil.push(linea);
+      else if (sec === "ESTADISTICAS") { const p = linea.split(";").map(Number); historia.push({ t: p[0], pob: p[1], prod: p[2], ataq: p[3], gini: p[4], ahorro: p[5], aguaAh: p[6], herr: p[7], def: p[8], hab: p[9], fuerza: p[10], inte: p[11], resis: p[12], gen: p[13], cultivos: p[14] || 0, reservas: p[15] || 0, hambrientos: p[16] || 0, esperanza: p[17] || 0, natalidad: p[18] || 0, casas: p[19] || 0, ciudades: p[20] || 0, mayorCiudad: p[21] || 0, sinCasa: p[22] || 0, nacV: p[23] || 0, mh: p[24] || 0, ms: p[25] || 0, mv: p[26] || 0, mHom: p[27] || 0, mMuj: p[28] || 0, hombres: p[29] || 0, mujeres: p[30] || 0, mujeresFertiles: p[31] || 0, hombresAdultos: p[32] || 0, intercambios: p[33] || 0, precioAgua: p[34] || 0, enfermos: p[35] || 0 }); }
+      else if (sec === "MEJORES_PERSONAS") {
+        const p = linea.split(";"); const genes = p[3].split(",").map(Number), pesos = Float64Array.from(p[4].split(/\s+/).map(Number));
+        if (pesos.length === N_PESOS && genes.length === 3) personas.push({ genes, cerebro: new Cerebro(pesos) });
+      }
+    }
+    const W = this.cfg.ancho, H = this.cfg.alto, tieneMapa = mapa.length === H && mapa[0].length === W;
+    if (tieneMapa) {
+      this.tipo = new Uint8Array(W * H); this.fert = new Float64Array(W * H);
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        this.tipo[y * W + x] = { ".": TIERRA, "#": PARED, "~": AGUA }[mapa[y][x]] || 0;
+        this.fert[y * W + x] = fertil.length === H ? (+fertil[y][x] || 0) / 9 : 0.5;
+      }
+    }
+    if (extra.semilla) this.semilla = extra.semilla; if (extra.semilla_mapa) this.semillaMapa = extra.semilla_mapa;
+    this.generar(personas, tieneMapa);
+    this.historia = historia; this.turno = extra.turno || 0;
+    registrar(`${this.nombre}: cargado con ${personas.length} personas guardadas, ${historia.length} muestras${tieneMapa ? " y su mapa" : ""}.`);
+  }
+}
+
+</script>
+<script>
+// ============================================================ dibujo de mapas
+function mezcla(a, b, t) { t = clamp(t, 0, 1); return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`; }
+const VERDE_CLARO = [240, 243, 236], VERDE_OSCURO = [31, 122, 58], AZUL_CLARO = [173, 208, 245], AZUL_OSCURO = [37, 106, 191];
+
+// Sprites de 16px (Kenney.nl, licencia CC0: Tiny Town, Tiny Dungeon y Roguelike pack), incrustados como atlas.
+const ATLAS = new Image(); ATLAS.src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAmAAAAAQCAYAAACx1sM4AAAXbElEQVR42u2deXAU153HP91z6EAXkhBINhbCCDD3EYwQFoZkDayNk3Js47VxBa/L2cWEdbyOHRe7RipBaqm1Yxfx2oK1SS0k4E1gE0IQXixiQywD4hQyhoAwhzgkgQ4k0DEazUzvH6MeelrdPT2XgI1/VSp193u/7p7X7/3et7+/3/u18LO9L0rcwfIP5yxh6WcseE/QOv7g8Il+7fLn6koh2HPL5whF16x8/7k3wnp+/X/4OH/N8svpEyP6bNT9Ri1GfUFPN5r953aRQO1mpk0i3X7K891pzyAS9usbCSySFN70KQh/3Y9lz8FT0rWvt/HI3/0kpIbYe6ha+tG2V6ks/mNI+o+OnyqVzB+H50Ybg4ffw9ljZ3C1dwBgiYlh4NAsrDYrR/90ALezGwSBe4bdTe3VVgoPNyPGJzD7xVfpcLjIHnIX1afO0d7ZCUCs3cbgwVlYbRb27DmM0+lCECB7yGCarl7l1PaPsEaqIWNS0wHoam702w5GljquArAyNkO3Ts25JrJz0nz/+2oiCBZMKc/z4PCJUrAG0KwBnTY9T1N/354Kpk3PY8qEkX7HDx496SsDOPmNDY06gFLXCQY8BNv3zNxDOL8h0D2Eoh8s+NJqx0i1n975QhnDt1O/7StAFm7/+cb+RG/8hdP/Q5n3zNxDTnItOZMns/03b0uhgLD/bPxvxk2bzMSi70qhgDCPIFBXU49wrQUpLoamy1eJSYjD0+1GcjjpPleLaLXi7nZhsVqRJIm2zi66u10IgoAgQO3lelrbuoiJsVJff5X4fnG4XW6cXU4uXqzFZrPS3e3CarUgeTx0ORy4XD36kWLAwgVgC3fvIitvNAC1FcdZP3NWQBAWaQZM3Xlil2YC4FhZF5FBEG4n1tJ/68NSv7qlby0zPPe811b4A7BRd33DgAUJBAKBiMLZmeTP9wfGezdVsLysTvMcSt1nh7/ip7eh+p2IAsBIACG9ewhFX6nz22w7T9U4fdsDR98PwJXjB/yOy9vyudRtrxRlm4cCYos3bqZowZNRG7/RnLTltlC3QaDnEKlJ22z/KVn0YEhz0OI1fxYipf/977qD0v39Hy0sXvNnIRIMWCgvIFrtGO747YsXUPU5aqt3SU7HdQC+On46aCZs4Y5iqcV5A4ALh6uDZsIeGj5BWj4hmbSEWCSLhezcwVw4e5nLZy4jiiJpA1IQRAHRaiE2sR+Zdw2g/tIViItnycenudEtMWzu08QnJWEVRbJz7uZSzWVqLtQiiiL9U5MRRRGLxUJCv3gGDRpAfX0DMTaRPevfixwDVn34FADZOWl+26aZr7zRiLP+B4AsnmCp46ouExZt5uuhdd7Js/xUjd/+zucqgnobVusFK5+tGQrAtxedNVU/EPiS66TlP6JbPjo5geOtbVEBO2bOHe71Q9VXPv+pA2zMmZjuV/5JZSP7G7oDPv/C2Zl8+z+24yhf4Xc8f34ehVToToYy+NpQ/Y4fCJO3ZSBmhs0p3riZg0d7c5tTJoz0gYlAv7945Tz2bqow/fvDbT8ZWO1++AGuHD/Q6/5kQDbz4y96gTBl2y8vq/O7vhqEBMOGFW/cHFEGw4zdCHYCVNZ/9Kc/uwn4v9gHHAEgLf8R8h+Y5ivb9uYbfvcT7j2r72Peays0mXfZPhmd8+M8Nw9XWEzvq2VtSjMvtKSa3lfKiRONjBqVbno7WuBZ2X4Hj55kyoSRfu2n9WzU7S+Pd/kcyvnBLAsv93+lzTCjG4r9ABgzOjdkJgzgnsnDQ2LC3KII/eLo6OjCk5GK48wlRFEAJMSkfl42zCLScqOdjAHDaT9fiy3GjmCzQnc3FlGgX1wsjs5OMlKTuXj+EqIoAhKJCfG4XW5Ei4WO9nbSU+/l8qU6YhP6YbNZESPVkbJz0vxcg9EASX0hMmgCKBiRTcGIbM2yUA1wpPX37anw/SkHYPHGzX5/8qBU66klXPBjJGbOHS74MwPwjEQLPADMmZjO1AG2gNfPn5/XC3wpy4xEzXapwVkgF5nWZKf8rwXKtECMbDyV9ztnYnovdimS7ScDqpkff6FbRy7TAl9KkKV1ffW9h8o6mB27n60Z6vcXbfugBF+BRFlXzUAq/0JpKy3wJYMBtQ1SyoX6Vi7UtzLmD22+baN9PX3lttG+liiBlZntYKW8vFy3HTcXTWdz0fSA7Vc4O5PNRdMN219pB5RAzKj91QBO+fKhnj+M+kO49kMGYaG2sQzCzNa32izE2+24brSTIMKZzytxNl8nKTWJxJREbB4PNiRcHZ0kWCycLT+Ks+Ea9SfO4nQ4sVpt2Ow22to7QBSpOPAl11pvkJycSGJiIpIEEtDZ6UCwWDhw8BiNza1UV5+ny9EVOQYsHHZqUZ2FwpovyeIJnwtyefY4snO4LQOAzbAASrD20Lo8UyyY2oArt/VYsJd+9NzNSXfvdt+AU0+2UyaMpFSlA/DrHvo2EnIrmbNI3aM8eefPz/N7g/Makwr2GzBYSrl68mKvYxkjBxvqPDv8Fe4fNVa3/P5R/8WBE8cMgZoRu2m2/8vGU/n7zTIj4bSfmtnSY8L0AFjh7EzGThuqe/7N04ZybN9ZQxYyEvLZmqHUVhwHICtvNLUVx/lszWjTTHYgBslIZHYLYGzPRN1UvJ1tPbZBD6gpmceBZRVcmZ3H7ocfMATEWqIFHrRsUK+Jc1ByWG1+z6BkPs5zw8lW37kC7UeTAVu1aKbfmJq8YAWDBg2ivLxcKigo0GVoJlWVwIR3ddvPXWV+/lIzYGbGr5H9SMt/hKaefhQt+9HXTJjVaiXjvhxcrdcZMiqH05XV2Ow2JEnCEmNn0L13I3k8NNQ1cu+Ye6muPEVcfCxdLe14XNex9rOQe+9gbrQ7uXdYNieOn8ZmsyBJEjE2G9lD7sLjkWi42kju8KGcOF5NTGwMbS3XcLk9kQdghBAsn52TxvqcWb4g/PUzZ5FN34MvMwyXEkzpdSI5dixU2fBcp+m6RqzGh6tWAfDDl1/W17kDYsCiBeyMWCwtxip/fh6UbTF1joyRg4ktWMaIMQ9x6quduqyYP8AaawiwZIC2oVr/HHJsn/zGqv4fiL1SGlF1e+zdVMHUATafKyGS7ad0Qb5+cL8uSDByQY4NALB8AC3KAEwWGXwFK1MmjMS9/iX/Ywvf1QUvauAly7F9Z03VU4PdK7Pzeh0LNihbdlspY+iCcekG63oEeLjCwtqUm3UD7UeLAVu1aKY0rcA/hnnfxmVMXrCCgoICQQuEPVm8x9c/T6jYK+X22GlDebJ4T0D2a760FSq3eu298D2/OkZAXrYfWvPKtOl5vpf8aNqPvgRhLqDhzHls169TH2+l4/Jl4pIT8Ljc4HLQfL4GURTpuHiFxuQYnHV1JKYmYenq8K5g9Xg4e6mR9s5uYhMSqGtqJTExAbfbjdsFF+uvYbGI1F5pITG1lSst7aSkJNPpsSAIRA+AhbJScVGdpUeXW+p6DAaEaYljZR2sy6b8VI2fC9NsTMWz6+L4LC+8mIzbnYm6XUU2FuNf/Jyq1TN8x9X7RsyXHtOlxYop5cCJY7R8rz87RjymWf7eqf4c2Hos4D3Ml7by0C/OsfPHNweSvF9qgv0DeHGXU+f3G7NYobafDKheP7if4pXzNOu8vrTU0AWpBThCqRNp8CUvLgpWLAu9TIgajEVDBpZV+IEvmQULNzbMrKjdgmP+ABcM9tUslk8/Ba+bUi7Q2Uelv+qDNspGupl90jsHBdrWY9G0wBfAtIJZ7Nu4DFghKZkwZQze8rI6ihe+y8GjJ/lw1Sq/F+cPV62Cl1+m6K09uiBYBmvzpa1+NmgJR3jv1KSALCSqWGEZrCn/E2X70dcgzC4IXBvyLbq7HJxpdWAbNhXJI+EBOpwePB4P7i4PnowsDp3vRkyfgEUQiM9NRPjqT4hWK2OtV7hmE2g/Uc8wuw3PjWYkwNnZgafeg9PtJl2SuLT7L6TabYjNMD7JwgWLGD0AFoo78naIG5MD79XAKRQwp44fMxuMr3Q/1lYcJytvtK4bUiuOK5AodfqPejwqTNTtBNaCuRclgFIDJj0ApWQHfvDzQ+xY69V3lK+gavUMH/v19ZeXDSewDdXvMI8VPoMFULV6hmIb5lZvMcW+wTkVEJT3D5kDobs+1ywLxCCF0n5KFuz4CK8NmPvCFnasfcxve87EdF451aQLwIxclb/NtnO8D/tcuOCLPsqHpldXC3zJcWFyuxoF8atjiAIBuFvtgvQea1aUmdnWl9Y6f1udnOm16fYLn1HPt1EyYOo2XDLiCB/2/L9auZWpIwfzYc+LVWkABnLKhJFkdB7RsB+f88G6NX33Ehui/ehrEPb81FT+91AlLe3dCKIAHgkJiLNCfk4CVkkiPT2BzEGJgAUkNwgidlsbJYvG8FtpNlVHymlp60IQBCTJqx9rFcm9Px9EG6n9kxg0KAMEkDwSgiAQaxfJnvNMdAFYpMVMnrBogbJQAVk4umYMuDIPmBE9rKd38v+J2zBS9/KDnx/iV6/Czh/n+AGYnT/2lhlNYDvWPsbeTRW6sQ/58/PYMd8LKPRAWOlby1iy9jGqVs9gf9wz7Ac+WPcMUzs/8umZcQFVrZ7hB3jMsHdqfSWgkvcDMUjBtl8vwFRTB2VbfG0pt6vyt+u5ID+pbPS9hT9V4/Sb+J9a8CSFI7x1+ioflTKtTihArC+YLyPAhUaM2MCyCnb/80u+2DCj+Fnl6jkzICzcVZDhuiDDkZKSEsn55SamFczqBb4A9pXvYtSwbFrrznKifBfHjs2XFi9eLGi12a9e/RarZ9l9/f/rLy+zepbdcPygCC+ZOsJ//PrGfudH7I97BrNxiAQZwhAJ+9HXIOxQTRtHzrQycaCIu2dNogWJyqseUj3tLCjIot/gBHYcqqe9y4UoCEgSeCQPVquVM47DXCz/lHFZcXh6zikCx+o6kBJTmfnE02Qlx7D/0510dDoRelZHuj0SMSJ3DgBbuHsX9Bixhbt3GeYJCwcoKcGS1jElS2ZGwgFf4Yo69utOdjXqrV6MxH2q8z5tOnqSSVUlfozVkfGLKd74um9SUU8eMlsjB5+q45DkcjWgUE9g3tWO53jv1CSWjPiIm+7HSTw7PMcvHYV6Cbo8yc1doBXjcahnRewzFC140tCFpFzBpARRRUtLNVcYqq//A9/Eewi9Ze3q6w8cfT+7R9/M+aUEXHLcmDI3GDW9AcD+hm7mKCYQJQCY99oKqCoJuBRevZo0VLebEnwFKwePnmTKwndNx3pGQmRAq5c7TI4H0wNqylgvTKT3UNeVXYiBXI/yfqRdkBfqWyHF/zxG28rrl5SUSM8//zxrXt6kCb40mZfnn6ekpEQCBE37Q4lhu2n1RbmPeG3HkV7j1+uGPBlw/Oo9x+KNm5nScw+Rsh/nWrO4K+a65vW6HA5iYmMNQdg/pj/Nv9d+oP0C0+nEEmc3BGFtLolxA21Mm1FAQ7P3PgakJuIu/4Jmh0RGZgofHbjKL39/kgdyk3H1MGQ2i8iFa13Ejh7MuMwY8mZ+h8Zmbx9JT0tB+PQTaq63kTUwjX1bfsOOkreZOjITt8cNEtisIl83d/UdAAsnUWuwecIi5X4MBngFs5Iy0ApKArgxAk0Ecu6YUA347Rzn9WiM6l4jDL58q4dUK5Gm6BhBNFxw+fPzmFrpdRYo45mM4sNkgLbhTdjwZg5Tikayn5EK1wKc3rrPzy2n1+f0VtEF6rPKlUtqd+H766vI7f9P5M8/5wNEkb6+EcOlTItg1H57N1VQODsTy4SRTFGxLu4qerWf3jhSMjZTggAX4M3bJ4cRyGPX7ApImQUt7aPxpHZ/+VaRhrBQQc4/p3z2yvFy8OhJ3UD8SLggAV5oAQbdPB5oP5IuyEWrdrDm5bkByxat2hHQ/rir/EGwDIyN7M+SEUcoWlrKgOcKe43fTcL3aFi3nOKV83x9q6/tx7kHR5A/Nzeg/QgWhBmyyAFAmMViodPRiTRkIsOGejMCtHgScJbtxJ4UB5JEe5eLB3KTuS/NTlObC0nykBJvYVBKIsetVpydHUhDJjAsxwvgrklJODt/j2i1IknQ4egm774scjP609TmRPJ46N/PSlqaNTIALNqfB+IWxYHpMVpG5UbB/GZWUCrjv7TKZEMu62vFgJkx4LJeMDFgfRWLZaZebM+ghLaIsHc71j4GnR/x3qlJukvpDx49yZIRR3q5xFC54HasHUzxynkULS2laGmpD4Qp48MiLWn5j/Du++v8XNLvvr8O8E9Vsm9PheZycjWDV/bHGX4rM3P7z+DZn57TdAlG4voyw6IX3+XLhM+BPumrRQueDJhJ3gjM6AEuoxenQElRo+U6NXPdp2qcQbeHDChCSWh7J8nixYuFkpIS6dFHH+Xxf/21Zp2GhgZfWUNDA9u2bWPx4sXCpl+slWSA5V7/EkfGL/bZH2W7ude/xMEeZl5OOKw1fr12ZznvczMw3ut2r/LZoWiMX7X9ePW8A4A3XD/hZ9a34cER/Gpuru71bxUIc7nc2O0Wzl2o454kLzt+4XobdrsVV7cLj8uDKAi4PBKNbS4arnch2uy4RYFu0Y3L5SLGbuPchXo8iV1ePHSjA7vdRrfLjcvtRhAE3G43TTe6aLjuQLTZ8YgS3aIzMgDMDPgyypQfCMDdyjxhMgsmg65g3I+awGFpZq9PGwUT/7XhuU6eXReHUR6wQBKtPGCRYtbM1Lty5Yr8DhNR9q70rWVM0kkYWFpWx5K12isUlXFfMtUu0+17N1X4Yo/04sM2vJnjC8T3TnTTtBO1vvlKwPsvnJ2Juwp+lCAb7yNM6pk4A+UJm/vCFgpnZ/rykTV2/Av3j/q3nrJ3/Fypkbz+UzVOvwSgRgyYFkiT23V5WZ1uwsflZXUUUhEyGDEDfiKhfytAhHzdjAWVukyHmh3T+q2lby3rxTyaKbsdRJkh38y2FggLBrTpfs3ktRW9XNBHxi82tE3q8avUm9PjzpQXsxjl54qU/XjD9ROf/XgjXrYff9/Lflz7eht3jc4llJiwyvNWftf5KfdMHh5STNjjcd8hMSWODmcnyU3VtDV5AVgyNmpFOynpCSRmJSMdagbAZrNg7XYQ+62/IT5epPXgJyQn9gOrnaTm07Q1eQFYshBDg8VGekoimRlp3kysgNVm7aVv7asVj2qwFQyA64s8YY6Vdabzd5kFUJHSVQbxKsGXmhpOy38k4Me578Q8YH0hyjcyGSzJ8ULK/DZ6b26+nFdlW3zAS35LLZydyZyJ6ewvq/Orpydnzz8NxfvILfKCsKuNLbS+/xfD+1e+kb7fNsnv2E2juV0zkaL6d509/zRnkdNdKLf1f3+o11dO4karG7XKjMCOe/1LvjQOVxtbSNteGHSfCDVh6+3ywelIJZw1AmdKxlAZQ2QUtK1258rfZAyZgbrF+oFAVbDPSv5KSe/xo/9MtewXAJXL+cTgm7TRsB9rktKAt707ym0D+0EIgflwmt/9hZAz5v/u8Kc8ZRP4ot6NKB6jq+dzoDFWOFzXzbzBFq413KC1qQ2LRaSry4XbFkvtgd10xltJio8nLsZG1aV2RPEgTpenR1+k8lIH46fE0NjcSlPLdRIsIk5nb/0+D8I3AlncgjxhSiMugyMlEFMyXsF+lDtSRlqLCbtdjPytkrKysp7X87+NuPtFBlD7VZ+22a/xYWdZ16xhUdeTzyEH18ufHJLBF+AHvpRJWrW+A6dkOIt6jKV630hf/ckj2QVp1IfDvb4ekNI7v5auEuwqc2gBfuBL74PogfrEnTTe+vL+ldcySrgqlynB11+7DdN7VuGMX/Xnvm66IKM3fpX6GU+M8avjc0HqXP81FkgJKXfT1nKpV3lMbCxdDkfANsxNy+Z0U2/PlCXOjrvTOGXN2CSBtmGJtDslbD1N55KgIDeW+xLgTFUt7a2dWK0iwzJjudZhR5QkEmMtfN3qZsDwcQye1c6Frm5EwdudPZJE9lArqcNGceyrU9xo7yDFYmFYZjzXkqx++v8H+CYoW2r1zYoAAAAASUVORK5CYII=";
+const SP = { pasto: 0, flores1: 1, flores2: 2, tierra: 3, arbusto: 4, arbolV: 5, arbolN: 6, muro: 7, agua: 8,
+             campesino: 12, forzudo: 13, mago: 14, caballero: 15, mujer: 16, hombre: 17, guerreroRojo: 18, magoViejo: 19,
+             espada: 20, moneda: 21, escudo: 22, pico: 23, hongo: 24, fantasma: 25, brote: 26, planta: 27, maduro: 28, comida: 29,
+             sabia: 30, guerrera: 31, caballera: 32, campesina: 33, carpa: 34, carpaVacia: 35, casaMadera: 36, edificio: 37 };
+let frameAnim = 0;
+const atlasListo = () => ATLAS.complete && ATLAS.naturalWidth > 0;
+function sprite(ctx, idx, x, y, tam, flip) {
+  if (flip) { ctx.save(); ctx.translate(x + tam, y); ctx.scale(-1, 1); ctx.drawImage(ATLAS, idx * 16, 0, 16, 16, 0, 0, tam, tam); ctx.restore(); }
+  else ctx.drawImage(ATLAS, idx * 16, 0, 16, 16, x, y, tam, tam);
+}
+const hash = (x, y) => (((x + 1) * 73856093) ^ ((y + 1) * 19349663)) >>> 0;
+function spriteAgente(a, m) {
+  const [f, i, r] = a.genes, mujer = a.sexo === "M";
+  if (a.def >= 3) return f >= 1.2 ? SP.guerreroRojo : mujer ? SP.caballera : SP.caballero;   // muy defendido: armadura
+  if (f >= 1.25) return mujer ? SP.guerrera : SP.forzudo;                                    // gen fuerza dominante
+  if (i >= 1.25) return mujer ? SP.sabia : a.edad > 0.7 * m.cfg.maxEdad ? SP.magoViejo : SP.mago;   // gen inteligencia dominante
+  if (r >= 1.25) return mujer ? SP.campesina : SP.campesino;                                 // gen resistencia dominante
+  return mujer ? SP.mujer : SP.hombre;                                                        // equilibrado
+}
+
+function dibujarMapa(m, cv) {
+  const ctx = cv.getContext("2d"), W = m.cfg.ancho, H = m.cfg.alto, tam = Math.floor(Math.min(cv.width / W, cv.height / H));
+  const ox = Math.floor((cv.width - tam * W) / 2), oy = Math.floor((cv.height - tam * H) / 2);
+  cv._geo = { tam, ox, oy };
+  ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#fcfcfb"; ctx.fillRect(0, 0, cv.width, cv.height);
+  const conSprites = atlasListo();
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, X = ox + x * tam, Y = oy + y * tam, com = m.comida[i], h = hash(x, y);
+    if (!conSprites) {   // respaldo por si la imagen no cargó
+      ctx.fillStyle = m.tipo[i] === PARED ? "#3a3a3a" : m.tipo[i] === AGUA ? mezcla(AZUL_CLARO, AZUL_OSCURO, m.agua[i] / 10) : mezcla(VERDE_CLARO, VERDE_OSCURO, com / 10);
+      ctx.fillRect(X, Y, tam - 1, tam - 1); continue;
+    }
+    if (m.tipo[i] === PARED) sprite(ctx, SP.muro, X, Y, tam);
+    else if (m.tipo[i] === AGUA) sprite(ctx, SP.agua + ((frameAnim + (h % 4)) % 4), X, Y, tam);   // agua animada
+    else {
+      // la cantidad de comida se ve en la vegetación: tierra pelada, pasto, arbustos, árboles
+      sprite(ctx, com < 1.5 ? SP.tierra : h % 7 === 0 ? SP.flores1 : h % 11 === 0 ? SP.flores2 : SP.pasto, X, Y, tam);
+      const cu = m.cultivo[i];
+      if (m.casa[i] !== 0) {   // vivienda: carpa si está aislada, casa de madera con vecinos, edificio de piedra en el centro denso
+        let vecinas = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const nx = x + dx, ny = y + dy; if ((dx || dy) && nx >= 0 && ny >= 0 && nx < W && ny < H && m.casa[ny * W + nx] !== 0) vecinas++; }
+        const hg = m.hogares.get(m.casa[i]), vacia = !hg || hg.miembros.size === 0;
+        if (vacia) ctx.globalAlpha = 0.55;
+        sprite(ctx, vecinas >= 4 ? SP.edificio : vecinas >= 2 ? SP.casaMadera : vacia ? SP.carpaVacia : SP.carpa, X, Y, tam);
+        ctx.globalAlpha = 1;
+      }
+      else if (cu > 0) {   // cultivo en sus tres etapas; si está seco se ve como brote y con un punto rojo
+        sprite(ctx, cu >= 1 ? SP.maduro : (cu < 0.35 || m.riego[i] <= 0) ? SP.brote : SP.planta, X, Y, tam);
+        if (cu < 1 && m.riego[i] <= 0) { ctx.fillStyle = "#c43c3c"; ctx.fillRect(X + tam - 4, Y + 1, 3, 3); }
+      }
+      else if (com > 6 && m.capComida[i] > 7) sprite(ctx, com > 8.5 ? (h % 3 ? SP.arbolV : SP.arbolN) : SP.arbusto, X, Y, tam);
+      else if (com > 4 && h % 13 === 0) sprite(ctx, SP.hongo, X, Y, tam);
+    }
+  }
+  for (const f of m.flashes) {
+    const x1 = ox + f.x1 * tam + tam / 2, y1 = oy + f.y1 * tam + tam / 2, x2 = ox + f.x2 * tam + tam / 2, y2 = oy + f.y2 * tam + tam / 2;
+    ctx.strokeStyle = f.ok ? `rgba(227,73,72,${f.ttl / 10})` : `rgba(120,120,120,${f.ttl / 10})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    if (conSprites) { ctx.globalAlpha = f.ttl / 10; sprite(ctx, SP.espada, (x1 + x2) / 2 - tam * 0.4, (y1 + y2) / 2 - tam * 0.5, tam * 0.8); ctx.globalAlpha = 1; }
+  }
+  const ahora = performance.now();
+  m.fantasmas = m.fantasmas.filter(f => ahora - f.nace < 900);
+  if (conSprites) for (const f of m.fantasmas) {
+    const p = (ahora - f.nace) / 900;                      // sube y se desvanece durante 0,9 s
+    ctx.globalAlpha = 1 - p; sprite(ctx, SP.fantasma, ox + f.x * tam, oy + f.y * tam - p * tam * 0.8, tam); ctx.globalAlpha = 1;
+  }
+  for (const a of m.agentes) {
+    const X = ox + a.x * tam, Y = oy + a.y * tam;
+    if (!conSprites) {
+      ctx.beginPath(); ctx.arc(X + tam / 2, Y + tam / 2, tam * 0.35, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(235,104,52,${0.3 + 0.7 * Math.min(1, a.comida / 40)})`; ctx.fill(); continue;
+    }
+    const bob = a.movio ? -((frameAnim + a.id) % 2) * tam * 0.12 : 0;    // paso al caminar
+    sprite(ctx, spriteAgente(a, m), X, Y + bob, tam, a.dir < 0);
+    const chico = tam * 0.45;
+    if (a.comida > 30) sprite(ctx, SP.comida, X + tam - chico, Y + tam - chico, chico);    // tiene buena reserva de comida
+    if (a.energia < 30) { ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(X + tam - 3, Y + 3, 2.5, 0, Math.PI * 2); ctx.fill(); }   // hambriento
+    if (a.gestando > 0) { ctx.fillStyle = "#e87ba4"; ctx.beginPath(); ctx.arc(X + 3, Y + tam - 3, 2.5, 0, Math.PI * 2); ctx.fill(); }   // embarazada
+    if (a.destino >= 0) { ctx.fillStyle = "#2a78d6"; ctx.beginPath(); ctx.arc(X + 3, Y + 3, 2.5, 0, Math.PI * 2); ctx.fill(); }        // emigrando
+    if (a.enfermo > 0) { ctx.strokeStyle = "#1b8f5a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X + tam / 2, Y + tam / 2, tam * 0.46, 0, Math.PI * 2); ctx.stroke(); }   // enfermo: aro verde
+    if (a.herr >= 2) sprite(ctx, SP.pico, X, Y, chico);                                     // con herramienta
+    if (a.def > 0 && a.def < 3) sprite(ctx, SP.escudo, X, Y + tam - chico, chico);          // algo de defensa
+  }
+}
+
+// ============================================================ gráficas comparativas
+const GRAFICAS = [
+  ["pob", "Población viva", v => v.toFixed(0)], ["prod", "Producción de comida por turno", v => v.toFixed(0)], ["ataq", "Ataques por turno", v => v.toFixed(1)],
+  ["gini", "Desigualdad (Gini, 0 = iguales)", v => v.toFixed(2)], ["ahorro", "Ahorro promedio de comida", v => v.toFixed(0)], ["hab", "Habilidad aprendida promedio", v => v.toFixed(2)],
+  ["cultivos", "Cultivos sembrados (parcelas)", v => v.toFixed(0)], ["reservas", "Reservas de comida (suma de todos)", v => v.toFixed(0)], ["hambrientos", "Hambrientos (% de la población)", v => v.toFixed(0)],
+  ["casas", "Casas ocupadas (asentamientos)", v => v.toFixed(0)], ["mayorCiudad", "Tamaño de la mayor ciudad (casas)", v => v.toFixed(0)], ["ciudades", "Ciudades (grupos de 5 o más casas)", v => v.toFixed(0)],
+  ["intercambios", "Intercambios comida-agua por mes", v => v.toFixed(1)], ["precioAgua", "Precio del agua (comida por unidad)", v => v.toFixed(2)], ["enfermos", "Enfermos (% de la población)", v => v.toFixed(0)],
+  ["fuerza", "Gen fuerza promedio", v => v.toFixed(2)], ["inte", "Gen inteligencia promedio", v => v.toFixed(2)], ["resis", "Gen resistencia promedio", v => v.toFixed(2)],
+];
+function dibujarGrafica(cv, clave, formato) {
+  const ctx = cv.getContext("2d"), ancho = cv.clientWidth, alto = cv.clientHeight;
+  if (cv.width !== ancho * devicePixelRatio) { cv.width = ancho * devicePixelRatio; cv.height = alto * devicePixelRatio; }
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); ctx.clearRect(0, 0, ancho, alto);
+  const ml = 34, mr = 8, mt = 6, mb = 16;
+  let maxV = 0, t1 = 1;
+  for (const m of MUNDOS) for (const p of m.historia) t1 = Math.max(t1, p.t);
+  const t0 = ventanaAnios ? Math.max(0, t1 - ventanaAnios * ANIO) : 0;   // ventana de tiempo elegida (todo, 200 o 50 años)
+  for (const m of MUNDOS) for (const p of m.historia) if (p.t >= t0) maxV = Math.max(maxV, p[clave]);
+  if (maxV <= 0) maxV = 1;
+  const X = t => ml + (t - t0) / Math.max(1, t1 - t0) * (ancho - ml - mr), Y = v => mt + (1 - v / maxV) * (alto - mt - mb);
+  const css = getComputedStyle(document.documentElement), cLinea = css.getPropertyValue("--line").trim() || "#dde2ea", cTexto = css.getPropertyValue("--ink-3").trim() || "#8690a0";
+  ctx.strokeStyle = cLinea; ctx.lineWidth = 1; ctx.fillStyle = cTexto; ctx.font = "10px 'IBM Plex Mono', monospace"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const f of [0, 0.5, 1]) { const y = Y(maxV * f); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ancho - mr, y); ctx.stroke(); ctx.fillText(formato(maxV * f), ml - 4, y); }
+  ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("año " + (t0 / ANIO).toFixed(0), ml + 16, alto - mb + 3); ctx.fillText("año " + (t1 / ANIO).toFixed(0), ancho - mr - 20, alto - mb + 3);
+  for (const m of MUNDOS) {
+    const h = t0 ? m.historia.filter(p => p.t >= t0) : m.historia; if (h.length < 2) continue;
+    const paso = Math.max(1, Math.floor(h.length / (ancho - ml - mr)));
+    ctx.strokeStyle = m.color; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath();
+    for (let i = 0; i < h.length; i += paso) { const x = X(h[i].t), y = Y(h[i][clave]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    const u = h[h.length - 1]; ctx.lineTo(X(u.t), Y(u[clave])); ctx.stroke();
+  }
+  cv._geo = { ml, mr, ancho, t0, t1, clave };
+}
+
+const FILAS_TABLA = [
+  ["Sistema económico", m => SISTEMAS[m.cfg.sistema] ? SISTEMAS[m.cfg.sistema].nombre : "personalizado"],
+  ["Año", m => (m.turno / ANIO).toFixed(1)], ["Semilla", m => m.semilla], ["Población", m => m.agentes.length], ["Generación promedio", m => ult(m, "gen", 1)],
+  ["Esperanza de vida observada (años)", m => ult(m, "esperanza", 1)], ["Natalidad (nacimientos por 100 personas y año)", m => ult(m, "natalidad", 1)],
+  ["Edad promedio (años)", m => (m.agentes.reduce((s, a) => s + a.edad, 0) / (m.agentes.length || 1) / ANIO).toFixed(1)],
+  ["Hombres / mujeres", m => m.agentes.filter(a => a.sexo === "H").length + " / " + m.agentes.filter(a => a.sexo === "M").length],
+  ["Embarazadas ahora", m => m.agentes.filter(a => a.gestando > 0).length],
+  ["Producción por turno", m => ult(m, "prod", 1)], ["Ataques por turno", m => ult(m, "ataq", 2)], ["Ataques logrados / intentos", m => m.ataquesOk + " / " + m.ataquesIntentos],
+  ["Desigualdad (Gini)", m => ult(m, "gini", 2)], ["Ahorro de comida promedio", m => ult(m, "ahorro", 1)], ["Agua guardada promedio", m => ult(m, "aguaAh", 1)],
+  ["Herramienta / defensa promedio", m => ult(m, "herr", 1) + " / " + ult(m, "def", 1)], ["Habilidad aprendida promedio", m => ult(m, "hab", 2)],
+  ["Genes: fuerza / inteligencia / resistencia", m => ult(m, "fuerza", 2) + " / " + ult(m, "inte", 2) + " / " + ult(m, "resis", 2)],
+  ["Cultivos ahora / siembras / cosechas", m => ult(m, "cultivos", 0) + " / " + m.siembras + " / " + m.cosechas],
+  ["Riegos (agua llevada a cultivos lejos de la orilla)", m => m.riegos],
+  ["Cosechas ajenas robadas (solo con propiedad privada)", m => m.robosCosecha],
+  ["Intercambios comida-agua (total) / precio medio del agua", m => m.intercambios + " / " + (m.intercambios ? (m.sumaPrecio / m.intercambios).toFixed(2) : "–")],
+  ["Enfermos ahora (%) / contagios en total", m => ult(m, "enfermos", 0) + " / " + m.enfermosTotal],
+  ["Hogares ocupados / vacíos / construidos en total", m => ult(m, "casas", 0) + " / " + ult(m, "casasVacias", 0) + " / " + m.casasConstruidas],
+  ["Adultos sin hogar (%)", m => ult(m, "sinCasa", 0)],
+  ["Migraciones (salidas a fundar hogar lejos) / emigrando ahora", m => m.migraciones + " / " + m.agentes.filter(a => a.destino >= 0).length],
+  ["Ciudades (5+ casas) / mayor ciudad (casas)", m => ult(m, "ciudades", 0) + " / " + ult(m, "mayorCiudad", 0)],
+  ["Hambrientos ahora (%)", m => ult(m, "hambrientos", 0)], ["Reservas de comida (total)", m => ult(m, "reservas", 0)],
+  ["Muertes: hambre / sed / vejez", m => m.mHambre + " / " + m.mSed + " / " + m.mVejez], ["Nacimientos", m => m.nacimientos],
+];
+function ult(m, k, d) { const h = m.historia[m.historia.length - 1]; return h ? (+h[k]).toFixed(d) : "-"; }
+
+function actualizarStrip(m) {
+  const h = m.historia[m.historia.length - 1], q = s => m.caja.querySelector(s);
+  q(".s-anio").textContent = (m.turno / ANIO).toFixed(1);
+  q(".s-pob").textContent = m.agentes.length;
+  q(".s-hog").textContent = h ? h.casas : 0;
+  q(".s-ciu").textContent = h ? h.ciudades : 0;
+  q(".s-ham").textContent = (h ? h.hambrientos.toFixed(0) : 0) + " %";
+  const ex = q(".extincion"); ex.hidden = !m.extinto;
+  if (m.extinto && m.diagnostico && ex.dataset.turno !== String(m.turno)) {
+    ex.dataset.turno = m.turno;
+    ex.querySelector("h3").textContent = `Este mundo se extinguió en el año ${(m.turno / ANIO).toFixed(0)}. ${m.motivoExtincion || ""}`;
+    ex.querySelector(".texto").innerHTML = "<p><b>Qué pasó:</b></p>" + m.diagnostico.map(l => `<p>${l}</p>`).join("") + "<p>Pulsa Reiniciar para empezar otro mundo, o cambia perillas y mapa antes.</p>";
+  }
+}
+function dibujarTodo(soloGraficas) {
+  for (const m of MUNDOS) { if (!soloGraficas) dibujarMapa(m, m.canvas); if (m.caja) actualizarStrip(m); }
+  const chip = $("estado"); chip.classList.toggle("corriendo", corriendo);
+  chip.innerHTML = `<i></i>${corriendo ? "Corriendo" : "Pausado"} · año ${(MUNDOS[0].turno / ANIO).toFixed(0)}${MUNDOS.some(m => m.extinto) ? " · <span style='color:var(--bad)'>hay un mundo extinto</span>" : ""}`;
+  for (const [clave, , fmt] of GRAFICAS) dibujarGrafica($("g_" + clave), clave, fmt);
+  let html = "<tr><th></th>" + MUNDOS.map(m => `<th style="color:${m.color}">${m.nombre}</th>`).join("") + "</tr>";
+  for (const [nombre, f] of FILAS_TABLA) html += `<tr><td>${nombre}</td>` + MUNDOS.map(m => `<td>${f(m)}</td>`).join("") + "</tr>";
+  $("tabla").innerHTML = html;
+}
+
+// ============================================================ interfaz
+const MUNDOS = [new Mundo("Mundo A", "#2a78d6"), new Mundo("Mundo B", "#eb6834")];
+let corriendo = false, pincel = "pared", ventanaAnios = 0;   // ventanaAnios: 0 = toda la historia en las gráficas
+
+function construirMundo(m, caja) {
+  m.caja = caja;
+  caja.innerHTML = `<header class="mundo-cab"><span class="punto" style="background:${m.color}"></span><h2>${m.nombre}</h2>
+      <label class="campo">Mapa <select class="mapaTipo" aria-label="Tipo de mapa de ${m.nombre}"><option value="0">4 oasis</option><option value="1">río</option><option value="2">lago central</option><option value="3">dos oasis lejanos</option><option value="4">costa</option><option value="5">muchos charcos</option></select></label>
+      <label class="campo" style="margin-left:0">Semilla <input type="number" class="semilla" value="${m.semilla}" aria-label="Semilla de ${m.nombre}"></label>
+      <button class="sec">Reiniciar</button><button class="imagen" title="Descargar el mapa como imagen PNG">Imagen</button></header>
+    <canvas class="mapa" width="768" height="480"></canvas>
+    <div class="strip">
+      <div><span>Año</span><b class="s-anio">0</b></div><div><span>Población</span><b class="s-pob">0</b></div><div><span>Hogares</span><b class="s-hog">0</b></div>
+      <div><span>Ciudades</span><b class="s-ciu">0</b></div><div><span>Hambrientos</span><b class="s-ham">0 %</b></div>
+    </div>
+    <div class="extincion" hidden><h3></h3><div class="texto"></div></div>
+    <details class="perillas-box" open><summary>Perillas de ${m.nombre}</summary>
+      <label class="campo" style="margin:0 0 8px">Sistema económico <select class="sistema">${Object.entries(SISTEMAS).map(([k, s]) => `<option value="${k}">${s.nombre}</option>`).join("")}</select></label>
+      <div class="perillas"></div></details>`;
+  m.canvas = caja.querySelector("canvas");
+  const selMapa = caja.querySelector(".mapaTipo"); selMapa.value = m.cfg.mapaTipo | 0;
+  selMapa.onchange = () => { m.cfg.mapaTipo = +selMapa.value; registrar(`${m.nombre}: tipo de mapa "${selMapa.options[selMapa.selectedIndex].text}". Pulsa Reiniciar para generarlo.`); };
+  caja.querySelector(".imagen").onclick = () => { const a = document.createElement("a"); a.href = m.canvas.toDataURL("image/png"); a.download = `${m.nombre.replace(" ", "_")}_anio_${(m.turno / ANIO).toFixed(0)}.png`; a.click(); };
+  const selSistema = caja.querySelector(".sistema"); selSistema.value = m.cfg.sistema;
+  selSistema.onchange = () => { aplicarSistema(m.cfg, selSistema.value); actualizarPerillas(m); registrar(`${m.nombre}: sistema ${SISTEMAS[m.cfg.sistema].nombre}. Las perillas quedan según sus reglas; puedes retocarlas (pasa a "personalizado").`); };
+  m.actualizarSistema = () => { selSistema.value = m.cfg.sistema; };
+  caja.querySelector(".mundo-cab button").onclick = () => {
+    const inp = caja.querySelector(".semilla"); m.semilla = +inp.value || Math.floor(Math.random() * 1e9); m.semillaMapa = m.semilla; inp.value = m.semilla;
+    m.generar(); registrar(`${m.nombre}: mundo nuevo con semilla ${m.semilla}. Con la misma semilla y perillas, la simulación se repite igual.`); dibujarTodo();
+  };
+  const cont = caja.querySelector(".perillas"); m.perillas = {};
+  for (const [k, nombre, min, max, paso, fmt] of PERILLAS) {
+    const fila = document.createElement("div"); fila.className = "perilla";
+    fila.innerHTML = `<span>${nombre}</span><input type="range" min="${min}" max="${max}" step="${paso}"><b></b>`;
+    cont.appendChild(fila);
+    const inp = fila.querySelector("input"), b = fila.querySelector("b");
+    inp.oninput = () => { m.cfg[k] = +inp.value; b.textContent = fmt(m.cfg[k]);
+      if (k in SISTEMAS[1].reglas && m.cfg.sistema !== 0) { m.cfg.sistema = 0; if (m.actualizarSistema) m.actualizarSistema(); } };   // tocar una regla del sistema lo vuelve personalizado
+    m.perillas[k] = () => { inp.value = m.cfg[k]; b.textContent = fmt(m.cfg[k]); };
+    m.perillas[k]();
+  }
+  // pintar sobre el mapa
+  let pintando = false;
+  const celda = e => { const r = m.canvas.getBoundingClientRect(), g = m.canvas._geo; if (!g) return null;
+    const sx = m.canvas.width / r.width, x = Math.floor(((e.clientX - r.left) * sx - g.ox) / g.tam), y = Math.floor(((e.clientY - r.top) * sx - g.oy) / g.tam);
+    return x >= 0 && y >= 0 && x < m.cfg.ancho && y < m.cfg.alto ? [x, y] : null; };
+  const pinta = e => { const p = celda(e); if (p) { m.pintar(p[0], p[1], pincel, +$("pincelTam").value); if (!corriendo) dibujarMapa(m, m.canvas); } };
+  m.canvas.addEventListener("mousedown", e => { pintando = true; pinta(e); });
+  m.canvas.addEventListener("mousemove", e => { if (pintando) pinta(e); else inspeccionar(m, e, celda(e)); });
+  m.canvas.addEventListener("mouseleave", () => { $("tooltip").style.display = "none"; });
+  window.addEventListener("mouseup", () => pintando = false);
+}
+function actualizarPerillas(m) { for (const k in m.perillas) m.perillas[k](); if (m.actualizarSistema) m.actualizarSistema(); }
+
+// Preajustes por URL (para enlazar desde el paper interactivo): #sistemaA=1&sistemaB=2&mapa=1&semilla=2024
+try {
+  const h = new URLSearchParams(location.hash.replace(/^#/, ""));
+  if ([...h.keys()].length) {
+    const semilla = +h.get("semilla") || MUNDOS[0].semilla, mapa = h.has("mapa") ? +h.get("mapa") : null;
+    MUNDOS.forEach((m, i) => { m.semilla = semilla; m.semillaMapa = semilla; if (mapa !== null) m.cfg.mapaTipo = mapa; const s = h.get(i ? "sistemaB" : "sistemaA"); if (s !== null) aplicarSistema(m.cfg, s); m.generar(); });
+  }
+} catch (e) {}
+construirMundo(MUNDOS[0], $("cajaA")); construirMundo(MUNDOS[1], $("cajaB"));
+for (const [clave, titulo] of GRAFICAS) {
+  const d = document.createElement("div"); d.className = "grafica";
+  d.innerHTML = `<div class="titulo">${titulo}</div><canvas id="g_${clave}"></canvas>`; $("graficas").appendChild(d);
+  const cv = d.querySelector("canvas"), tip = $("tooltip");
+  cv.addEventListener("mousemove", e => {
+    const g = cv._geo; if (!g) return;
+    const r = cv.getBoundingClientRect(), frac = clamp((e.clientX - r.left - g.ml) / (g.ancho - g.ml - g.mr), 0, 1), t = (g.t0 || 0) + frac * (g.t1 - (g.t0 || 0));
+    tip.innerHTML = `año ${(t / ANIO).toFixed(1)}<br>` + MUNDOS.map(m => { const h = m.historia; if (!h.length) return `${m.nombre}: -`;
+      const p = h[Math.min(h.length - 1, Math.round(t / 5))]; return `<span style="color:${m.color}">●</span> ${m.nombre}: ${(+p[g.clave]).toFixed(2)}`; }).join("<br>");
+    tip.style.left = (e.clientX + 12) + "px"; tip.style.top = (e.clientY - 10) + "px"; tip.style.display = "block";
+  });
+  cv.addEventListener("mouseleave", () => tip.style.display = "none");
+}
+for (const [id, nombre] of PINCELES) {
+  const b = document.createElement("button"); b.className = "sec" + (id === pincel ? " activo" : ""); b.textContent = nombre;
+  b.onclick = () => { pincel = id; for (const x of $("pinceles").children) x.classList.remove("activo"); b.classList.add("activo"); };
+  $("pinceles").appendChild(b);
+}
+
+let ultimoDibujo = 0, ultimoTs = 0, turnosPendientes = 0;
+function cuadro(ts) {
+  frameAnim = Math.floor(ts / 160);
+  const dt = Math.min(0.25, (ts - ultimoTs) / 1000); ultimoTs = ts;
+  if (corriendo) {
+    const rapido = $("chkRapido").checked;
+    turnosPendientes += +$("vel").value * ANIO * dt;              // años por segundo -> turnos
+    const n = Math.min(Math.floor(turnosPendientes), rapido ? 400 : 120), limite = performance.now() + (rapido ? 80 : 40);
+    let hechos = 0;
+    for (; hechos < n && performance.now() < limite; hechos++) for (const m of MUNDOS) m.paso();   // tope de tiempo por cuadro: la página no se traba
+    turnosPendientes = Math.min(400, turnosPendientes - hechos);
+    if (ts - ultimoDibujo > 100) dibujarTodo(rapido);
+  } else if (ts - ultimoDibujo > 160) {           // en pausa el agua sigue moviéndose
+    for (const m of MUNDOS) dibujarMapa(m, m.canvas);
+  }
+  if (ts - ultimoDibujo > 100) ultimoDibujo = ts;
+  requestAnimationFrame(cuadro);
+}
+$("btnCorrer").onclick = () => { corriendo = !corriendo; $("btnCorrer").textContent = corriendo ? "⏸ Pausar" : "▶ Correr ambos"; dibujarTodo(true); };
+ATLAS.onload = () => dibujarTodo();
+requestAnimationFrame(cuadro);
+$("btnReiniciar").onclick = () => { for (const m of MUNDOS) m.generar(); $("log").textContent = ""; registrar("Ambos mundos reiniciados con personas aleatorias."); dibujarTodo(); };
+$("vel").oninput = () => $("velTxt").textContent = $("vel").value;
+$("maxPob").oninput = () => { $("maxPobTxt").textContent = $("maxPob").value; for (const m of MUNDOS) m.cfg.maxPob = +$("maxPob").value; };
+$("pincelTam").oninput = () => $("pincelTamTxt").textContent = $("pincelTam").value;
+function descargar(m) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([m.texto()], { type: "text/plain" })); a.download = m.nombre.replace(" ", "_").toLowerCase() + ".txt"; a.click(); URL.revokeObjectURL(a.href); }
+$("btnDescA").onclick = () => descargar(MUNDOS[0]); $("btnDescB").onclick = () => descargar(MUNDOS[1]);
+let destinoCarga = 0;
+$("btnCargA").onclick = () => { destinoCarga = 0; $("archivo").click(); }; $("btnCargB").onclick = () => { destinoCarga = 1; $("archivo").click(); };
+$("archivo").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { const m = MUNDOS[destinoCarga]; m.cargar(t); actualizarPerillas(m); dibujarTodo(); }); e.target.value = ""; };
+$("btnCopiar").onclick = () => {
+  const [A, B] = MUNDOS; B.cfg = { ...A.cfg }; B.tipo = Uint8Array.from(A.tipo); B.fert = Float64Array.from(A.fert);
+  B.semilla = A.semilla; B.semillaMapa = A.semillaMapa; $("cajaB").querySelector(".semilla").value = B.semilla;
+  B.generar(null, true); actualizarPerillas(B);
+  registrar("Mundo B ahora tiene las perillas y el mapa de A, con personas nuevas. Cambia una sola perilla en B para comparar."); dibujarTodo();
+};
+window.addEventListener("resize", () => dibujarTodo(true));
+// Inspector: al pasar el ratón por una casilla muestra terreno, cultivo, hogar y persona
+function inspeccionar(m, e, p) {
+  const tip = $("tooltip"); if (!p) { tip.style.display = "none"; return; }
+  const W = m.cfg.ancho, i = p[1] * W + p[0], L = [];
+  const tipo = m.tipo[i] === PARED ? "pared" : m.tipo[i] === AGUA ? "agua" : "tierra";
+  L.push(`<b>Casilla ${p[0]}, ${p[1]}</b> · ${tipo}${tipo === "tierra" ? ` · fertilidad ${(m.fert[i] * 100).toFixed(0)} % · comida ${m.comida[i].toFixed(1)} de ${m.capComida[i].toFixed(1)}` : ""}${m.distAgua[i] >= 0 ? ` · agua a ${m.distAgua[i]}` : " · sin acceso al agua"}`);
+  if (m.cultivo[i] > 0) L.push(`Cultivo ${m.cultivo[i] >= 1 ? "maduro" : (m.cultivo[i] * 100).toFixed(0) + " % crecido"}${m.enOrilla(i) ? ", riego natural" : m.riego[i] > 0 ? ", regado" : ", <span style='color:var(--bad)'>seco</span>"}${m.dueno[i] ? " · sembrado por #" + m.dueno[i] : ""}`);
+  if (m.casa[i] > 0) { const h = m.hogares.get(m.casa[i]); L.push(`Hogar #${m.casa[i]} · ${h ? h.miembros.size : 0} de ${m.cfg.personasPorCasa} personas`); }
+  const id = m.ocupado[i], a = id ? m.agentes.find(x => x.id === id) : null;
+  if (a) {
+    const [f, n, r] = a.genes;
+    L.push(`<b>${a.sexo === "M" ? "Mujer" : "Hombre"} #${a.id}</b> · ${(a.edad / ANIO).toFixed(0)} años · ${ACCIONES[a.accion] || "–"}${a.gestando ? " · embarazada" : ""}${a.destino >= 0 ? " · emigrando" : ""}`);
+    L.push(`Energía ${a.energia.toFixed(0)} · sed ${a.sed.toFixed(0)} · reserva ${a.comida.toFixed(1)} comida, ${a.agua.toFixed(1)} agua · hogar ${a.casa ? "#" + a.casa : "ninguno"} · hijos ${a.hijos}`);
+    L.push(`Genes: fuerza ${f.toFixed(2)}, inteligencia ${n.toFixed(2)}, resistencia ${r.toFixed(2)} · habilidad ${(a.habilidad * 100).toFixed(0)} % · herramienta ${a.herr} · defensa ${a.def} · generación ${a.gen}`);
+  }
+  tip.innerHTML = L.join("<br>"); tip.style.whiteSpace = "normal"; tip.style.maxWidth = "360px";
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - 380) + "px"; tip.style.top = (e.clientY + 14) + "px"; tip.style.display = "block";
+}
+
+// Barra espaciadora: correr o pausar (salvo si se está escribiendo en un campo)
+document.addEventListener("keydown", e => { if (e.code === "Space" && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); $("btnCorrer").click(); } });
+$("btnGuia").onclick = () => { $("guia").hidden = !$("guia").hidden; };
+$("btnCerrarGuia").onclick = () => { $("guia").hidden = true; };
+try { if (!localStorage.getItem("guiaVista")) { $("guia").hidden = false; localStorage.setItem("guiaVista", "1"); } } catch (e) {}
+
+// Ventana de tiempo de las gráficas y exportación a imagen
+for (const b of document.querySelectorAll(".ventana")) b.onclick = () => { ventanaAnios = +b.dataset.anios; for (const x of document.querySelectorAll(".ventana")) x.classList.toggle("activo", x === b); dibujarTodo(true); };
+$("btnGraficasPNG").onclick = () => {
+  const cvs = [...document.querySelectorAll("#graficas canvas")]; if (!cvs.length) return;
+  const cols = 3, w = 400, h = 150, filas = Math.ceil(cvs.length / cols), out = document.createElement("canvas"); out.width = cols * w + 40; out.height = filas * (h + 28) + 60;
+  const ctx = out.getContext("2d"), css = getComputedStyle(document.documentElement);
+  ctx.fillStyle = css.getPropertyValue("--surface").trim() || "#fff"; ctx.fillRect(0, 0, out.width, out.height);
+  ctx.fillStyle = css.getPropertyValue("--ink").trim() || "#000"; ctx.font = "bold 16px IBM Plex Sans, sans-serif";
+  ctx.fillText(`Dos mundos que aprenden · año ${(MUNDOS[0].turno / ANIO).toFixed(0)} · A: ${SISTEMAS[MUNDOS[0].cfg.sistema].nombre} · B: ${SISTEMAS[MUNDOS[1].cfg.sistema].nombre}`, 20, 30);
+  ctx.font = "12px IBM Plex Sans, sans-serif";
+  cvs.forEach((cv, i) => { const x = 20 + (i % cols) * w, y = 50 + Math.floor(i / cols) * (h + 28); ctx.fillStyle = css.getPropertyValue("--ink-2").trim() || "#444"; ctx.fillText(cv.parentElement.querySelector(".titulo").textContent, x, y + 12); ctx.drawImage(cv, x, y + 18, w - 20, h); });
+  const a = document.createElement("a"); a.href = out.toDataURL("image/png"); a.download = `graficas_anio_${(MUNDOS[0].turno / ANIO).toFixed(0)}.png`; a.click();
+};
+
+// Pestañas de análisis
+for (const b of document.querySelectorAll(".pestana")) b.onclick = () => {
+  for (const x of document.querySelectorAll(".pestana")) x.classList.toggle("activa", x === b);
+  for (const t of document.querySelectorAll(".tab")) t.hidden = t.id !== "tab-" + b.dataset.tab;
+  dibujarTodo(true);   // las gráficas recién mostradas necesitan medir su ancho
+};
+// Tema claro / oscuro: se guarda la elección en este navegador
+try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("btnTema").onclick = () => {
+  const oscuro = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches);
+  document.documentElement.dataset.theme = oscuro ? "light" : "dark";
+  try { localStorage.setItem("tema", document.documentElement.dataset.theme); } catch (e) {}
+  dibujarTodo(true);
+};
+registrar("Pulsa ▶ Correr ambos. Con 'Copiar A → B' partes de mundos idénticos y cambias una sola cosa.");
+dibujarTodo();
+</script>
+
+<script>
+// ============================================================ experimentos con réplicas y estadística (para papers)
+const DESCRIPCION_MODELO = `
+<p><b>Espacio y tiempo.</b> Rejilla de 48 × 30 celdas. Un turno es un mes (12 turnos = 1 año). Cada celda es tierra (fertilidad 0–1; capacidad de comida 1 + 9·fertilidad), pared (intransitable) o agua. El mapa se genera con 7 manchas de fertilidad y 4 oasis (agua rodeada de tierra fértil), o se edita a mano; el agua pintada con el pincel también vuelve fértil la tierra a ≤ 4 celdas (fertilidad 0,95·e<sup>−d²/8</sup>, tomando el máximo con la existente), de modo que un río largo forma un valle fértil.</p>
+<p><b>Recursos.</b> La comida silvestre de cada celda de tierra crece cada mes una fracción de su capacidad (perilla "riqueza de la tierra"); el agua se repone sola. Sembrar cuesta 2 unidades de comida de la reserva propia y solo es posible en tierra fértil (fertilidad ≥ 0,15) desde la que exista algún camino hasta el agua. El cultivo necesita agua: en la orilla (a ≤ 2 celdas del agua por caminos transitables) la tiene de forma natural; más lejos, una persona debe cargar agua en la fuente (acción "recoger agua") y llevarla hasta la parcela (acción "ir a regar"; al pisar un cultivo seco con ≥ 2 de agua cargada lo riega automáticamente, y un riego dura unos 6 meses). Un muro que cierre el camino impide traer agua. Con agua, el cultivo crece a un ritmo fertilidad / tiempo de cultivo (12 meses: un año en tierra de fertilidad 1, más lento en tierra pobre); un año seguido sin agua lo seca. Cosecharlo rinde la "cosecha por parcela" (20 por defecto) × (0,75 + 0,25·inteligencia) × (1 + 0,3·habilidad). Un cultivo maduro sin cosechar se pudre a los 2 años. Cualquiera puede cosechar cualquier parcela.</p>
+<p><b>Personas.</b> Energía (0–100) y sed (0–100). Gasto mensual de energía 2·(0,5 + 0,25·fuerza + 0,25·inteligencia)·(1,5 − 0,5·resistencia); de sed 0,8·(1,3 − 0,3·resistencia). Comen de su reserva cuando la energía baja de 60 (1 comida = 10 energía); beben al pisar agua o de la que cargan. Mueren con energía o sed en 0. La reserva de comida se pudre 0,5 % al mes y el agua cargada se evapora 3 % al mes.</p>
+<p><b>Genes.</b> Fuerza, inteligencia y resistencia (cada uno entre 0,3 y 2; suman 3). Se heredan como promedio de los padres con mutación gaussiana (σ = 0,08) y renormalización. Fuerza: multiplica ataque y defensa, gasta más energía. Inteligencia: radio de visión 2 en lugar de 1 (si ≥ 1,25), +25 % de rendimiento al recolectar, gasta más energía. Resistencia: menos gasto de energía y sed.</p>
+<p><b>Habilidad.</b> Aprendida por práctica y no heredada: +0,01 por recolección y +0,02 por cosecha (máximo 1); +50 % de rendimiento silvestre y +30 % de cosecha.</p>
+<p><b>Decisiones.</b> Red neuronal 18 → 10 → 9 (tanh; se ejecuta la salida máxima; 289 pesos). Entradas: energía, sed, reserva de comida, agua cargada, comida en la celda, mejor comida visible, agua en la celda, cercanía del agua, nivel de herramienta, nivel de defensa, vecino presente, reserva y defensa del vecino más rico, fuerza propia, habilidad, cultivo en la celda, parcela sembrable, sesgo. Acciones: ir a comida, ir a agua, recolectar/cosechar, recoger agua, invertir en herramienta (8 comida; +50 % de recolección por nivel; máximo 6), invertir en defensa (6 comida; máximo 6), atacar, vagar, sembrar. Los pesos iniciales son N(0; 0,5).</p>
+<p><b>Instintos fijos (no aprendidos).</b> Con sed &lt; 30 camina hacia el agua más cercana (distancia por caminos, evitando paredes). Con reserva &lt; 5 o energía &lt; 45 asegura comida: recolecta si hay en la celda, o camina hacia la mejor comida a ≤ 6 celdas. Los adultos con reserva ≥ 10 y energía ≥ 50 se acercan, el 60 % de las veces, a una persona adulta del otro sexo a ≤ 4 celdas.</p>
+<p><b>Conflicto.</b> Atacar al vecino más rico (celda propia o adyacente) cuesta 6 de energía. Probabilidad de éxito = e·F<sub>a</sub> / (e·F<sub>a</sub> + (0,5 + D<sub>v</sub>)·F<sub>v</sub>), con e la "facilidad para robar", F las fuerzas y D<sub>v</sub> la defensa de la víctima. Si tiene éxito roba el 35 % de la comida y del agua de la víctima; si falla pierde 4 de energía más.</p>
+<p><b>Reproducción.</b> Sexos al 50 %. La concepción requiere una mujer adulta (entre la edad adulta y los 45 años), no embarazada ni en descanso, con energía ≥ 50, un hombre adulto en su celda o adyacente, y 20 de comida entre ambos (el padre aporta hasta la mitad). Embarazo de 9 meses; el hijo nace con 10 de comida, un cerebro que toma cada peso de la madre o del padre al azar y luego muta (8 % de los pesos, σ = 0,4), y genes promedio mutados. Tras el parto, 12 meses de descanso.</p>
+<p><b>Ocupación y asentamientos.</b> Solo puede haber una persona por celda: los movimientos a celdas ocupadas se bloquean y los hijos nacen en la celda libre más cercana a la madre (si no hay ninguna a ≤ 3 celdas, no nacen). Cada casa es un hogar de hasta 5 personas y todos necesitan uno: los hijos nacen dentro del hogar de la madre (aunque esté lleno, se apretujan hasta la edad adulta); quien no tiene hogar se une automáticamente a uno con sitio en su celda o adyacente, y si sabe de uno con sitio a ≤ 6 celdas camina hacia él (60 % de los meses); si no hay ninguno, emigra a tierra nueva (ver más abajo) o, si no encuentra destino, construye su casa donde está en cuanto reúne 5 de comida. Mientras tanto, los adultos sin hogar gastan 1 de energía extra al mes y no pueden criar. Construir una casa es una acción aprendida ("construir casa", 5 de comida) que se puede ejecutar en cualquier celda de tierra sin casa (no en pared ni agua); la celda deja de producir comida y de poder cultivarse, de modo que construir sobre tierra fértil tiene un costo y hacerlo en tierra pobre lo ahorra: la red recibe como entradas la fertilidad de la celda, la tierra cultivable alrededor y si hay un hogar con sitio cerca, y decide. Quien está a más de 6 celdas de su hogar tiende a volver (50 % de los meses). Un hogar sin miembros queda vacío y otro puede ocuparlo; tras 10 años vacío desaparece.</p>
+<p><b>Fertilidad y migración.</b> Cuando se cumplen las condiciones de concepción, esta ocurre cada mes con la probabilidad "tasa de fertilidad" (perilla; la etiqueta indica el máximo aproximado de hijos por mujer). Al llegar a la edad adulta, quien vive en un hogar con 4 o más miembros se independiza (sale del hogar). Un adulto sin hogar que no sabe de ninguno con sitio a ≤ 6 celdas y tiene ≥ 5 de comida emigra (50 % de los meses): elige, entre las celdas a 8 o más de distancia, la de mayor valor = tierra cultivable a ≤ 3 celdas − 3 × casas a ≤ 3 celdas − 0,15 × distancia, con agua a entre 2 y 12 celdas, y camina hacia ella; al llegar funda allí su hogar (o en la celda contigua si aquella ya no sirve). Si queda bloqueado un año, desiste. Se registran las migraciones iniciadas. Una ciudad es un grupo de 5 o más casas a ≤ 2 celdas unas de otras; se registran casas ocupadas y vacías, número de ciudades y tamaño de la mayor.</p>
+<p><b>Mortalidad.</b> Hambre, sed o vejez. A partir del 60 % de la esperanza de vida E, el riesgo mensual de morir es 0,02·((edad − 0,6·E) / (0,4·E))², y a E la muerte es segura. No hay repoblación: si no quedan hombres y mujeres adultos, la población se extingue.</p>
+<p><b>Comercio (Sugarscape, cap. 4).</b> Acción aprendida "comerciar": con el vecino adyacente que más agua carga, cada uno valora el agua según su tasa marginal de sustitución TMS = (comida + 0,5) / (agua + 0,5). Si una TMS supera a la otra en más del 10 %, quien valora más el agua compra 1 unidad al precio p = √(TMS<sub>a</sub>·TMS<sub>b</sub>) (entre 0,2 y 5 de comida), siempre que el comprador tenga ≥ 2 de comida y el vendedor ≥ 3 de agua. Se registran los intercambios por mes y el precio medio del agua, que emerge de las escaseces locales.</p>
+<p><b>Herencia (Sugarscape).</b> Con la perilla activada, al morir alguien su reserva de comida se reparte por igual entre los miembros vivos de su hogar; desactivada, se pierde.</p>
+<p><b>Enfermedades (Sugarscape, cap. 5, simplificado).</b> Con contagio &gt; 0, aparecen brotes espontáneos raros (0,05 % por persona y mes); un enfermo gasta 1,5 de energía extra al mes y contagia cada mes a cada vecino adyacente con la probabilidad "contagio"; la enfermedad dura 6 / resistencia meses (mínimo 2), de modo que el gen de resistencia actúa como sistema inmune. Se registra el porcentaje de enfermos.</p>
+<p><b>Tipos de mapa.</b> Además de los 4 oasis, se puede generar un río que serpentea de lado a lado (ancho 3), un gran lago central (radio 5), dos oasis en extremos opuestos, una costa (mar en todo el borde izquierdo) o muchos charcos pequeños repartidos (12 de radio 1). Toda agua generada lleva orilla fértil (0,7·e<sup>−d²/24,5</sup>). En los experimentos, el tipo de mapa es un parámetro más (desmarca "mismo mapa" para que cada réplica genere el suyo).</p>
+<p><b>Impuesto y reparto.</b> Con la frecuencia indicada (perilla "frecuencia del reparto") se recauda una fracción de la reserva de comida de cada persona (perilla "impuesto") y se reparte por igual entre todas.</p>
+<p><b>Propiedad de los cultivos.</b> Cada cultivo registra quién lo sembró. Con "propiedad privada" activada, cosechar un cultivo ajeno cuyo dueño sigue vivo es un robo: cuesta 6 de energía y se resuelve con la misma fórmula que un ataque contra la defensa y la fuerza del dueño; si fracasa, el ladrón pierde 4 de energía más y no cosecha. Sin propiedad privada, cualquiera cosecha cualquier parcela. La red recibe como entrada si el cultivo de su celda es ajeno.</p>
+<p><b>Sistemas económicos.</b> Son combinaciones fijas de las reglas de impuesto, frecuencia y forma del reparto (por igual o según necesidad: primero se lleva a 8 de reserva a quienes tienen menos), propiedad de los cultivos y facilidad para robar. Todo lo demás (biología, instintos, aprendizaje, hogares, migración) es idéntico entre sistemas, de modo que las diferencias observadas se deben solo a esas reglas.</p>
+<ul>${Object.entries(SISTEMAS).map(([k, s]) => `<li><b>${s.nombre}</b> (código ${k}): ${s.descripcion}${Object.keys(s.reglas).length ? " Reglas: " + Object.entries(s.reglas).map(([r, v]) => r + " = " + v).join(", ") + "." : ""}</li>`).join("")}</ul>
+<p><b>Condiciones iniciales.</b> 100 personas (mitad de cada sexo), edades uniformes entre 0 y el 50 % de la esperanza de vida, 20 de comida y 10 de agua cada una, cerebros y genes aleatorios.</p>
+<p><b>Medición.</b> Cada 5 meses se registran: población, producción de comida por mes, ataques por mes, índice de Gini de las reservas, reserva media, parcelas cultivadas, porcentaje de hambrientos (energía &lt; 30), genes medios, habilidad, herramienta y defensa medias, edad media al morir y natalidad (nacimientos por 100 personas y año). En los experimentos, el valor de cada réplica es el promedio del último 20 % de la duración; las réplicas de distintos niveles comparten semillas (números aleatorios comunes), lo que reduce la varianza de las comparaciones.</p>`;
+$("descModelo").innerHTML = DESCRIPCION_MODELO;
+
+const METRICAS_EXP = [
+  ["pob", "Población", 0], ["prod", "Producción de comida por mes", 1], ["gini", "Desigualdad (Gini)", 3], ["ataq", "Ataques por mes", 2],
+  ["cultivos", "Parcelas cultivadas", 1], ["hambrientos", "Hambrientos (%)", 1], ["ahorro", "Reserva media de comida", 1],
+  ["esperanza", "Edad media al morir (años)", 1], ["natalidad", "Natalidad (por 100 y año)", 2],
+  ["casas", "Casas ocupadas", 1], ["ciudades", "Ciudades (5+ casas)", 2], ["mayorCiudad", "Mayor ciudad (casas)", 1], ["sinCasa", "Adultos sin hogar (%)", 1],
+  ["intercambios", "Intercambios por mes", 2], ["precioAgua", "Precio del agua", 2], ["enfermos", "Enfermos (%)", 1],
+  ["fuerza", "Gen fuerza", 3], ["inte", "Gen inteligencia", 3], ["resis", "Gen resistencia", 3], ["hab", "Habilidad aprendida", 3],
+  ["def", "Defensa media", 2], ["herr", "Herramienta media", 2],
+];
+const METRICAS_TABLA = ["pob", "prod", "gini", "ataq", "cultivos", "hambrientos", "esperanza"];
+const COLORES_NIVEL = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4", "#008300", "#4a3aa7", "#e34948"];
+
+// ---- estadística
+const media = v => v.length ? v.reduce((a, b) => a + b, 0) / v.length : NaN;
+const desv = v => v.length > 1 ? Math.sqrt(v.reduce((s, x) => s + (x - media(v)) ** 2, 0) / (v.length - 1)) : NaN;
+const T975 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228, 2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086, 2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042];
+const tCrit = df => df < 1 ? NaN : df > 30 ? 1.96 + 0.08 * (30 / df) : T975[Math.round(df) - 1];
+const ic95 = v => v.length > 1 ? tCrit(v.length - 1) * desv(v) / Math.sqrt(v.length) : NaN;
+function lgamma(x) { const g = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5]; let y = x, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); let ser = 1.000000000190015; for (const c of g) ser += c / ++y; return -tmp + Math.log(2.5066282746310005 * ser / x); }
+function betacf(a, b, x) { const FPMIN = 1e-300; let qab = a + b, qap = a + 1, qam = a - 1, c = 1, d = 1 - qab * x / qap; if (Math.abs(d) < FPMIN) d = FPMIN; d = 1 / d; let h = d;
+  for (let m = 1; m <= 300; m++) { const m2 = 2 * m; let aa = m * (b - m) * x / ((qam + m2) * (a + m2)); d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; h *= d * c;
+    aa = -(a + m) * (qab + m) * x / ((a + m2) * (qap + m2)); d = 1 + aa * d; if (Math.abs(d) < FPMIN) d = FPMIN; c = 1 + aa / c; if (Math.abs(c) < FPMIN) c = FPMIN; d = 1 / d; const del = d * c; h *= del; if (Math.abs(del - 1) < 3e-12) break; } return h; }
+function ibeta(a, b, x) { if (x <= 0) return 0; if (x >= 1) return 1; const bt = Math.exp(lgamma(a + b) - lgamma(a) - lgamma(b) + a * Math.log(x) + b * Math.log(1 - x)); return x < (a + 1) / (a + b + 2) ? bt * betacf(a, b, x) / a : 1 - bt * betacf(b, a, 1 - x) / b; }
+const pValorT = (t, df) => ibeta(df / 2, 0.5, df / (df + t * t));   // bilateral
+function welch(a, b) {
+  const na = a.length, nb = b.length; if (na < 2 || nb < 2) return { t: NaN, df: NaN, p: NaN, d: NaN };
+  const va = desv(a) ** 2, vb = desv(b) ** 2, se = Math.sqrt(va / na + vb / nb);
+  const df = (va / na + vb / nb) ** 2 / ((va / na) ** 2 / (na - 1) + (vb / nb) ** 2 / (nb - 1));
+  const sp = Math.sqrt(((na - 1) * va + (nb - 1) * vb) / (na + nb - 2));
+  const t = se > 0 ? (media(a) - media(b)) / se : NaN;
+  return { t, df, p: se > 0 ? pValorT(Math.abs(t), df) : NaN, d: sp > 0 ? (media(a) - media(b)) / sp : NaN };
+}
+const fmtP = p => isNaN(p) ? "–" : p < 0.001 ? "p < 0,001" : "p = " + p.toFixed(3).replace(".", ",");
+const fmtN = (x, d) => isNaN(x) || x === null ? "–" : (+x).toFixed(d).replace(".", ",");
+
+// ---- diseño y ejecución en un Web Worker (usa el mismo código del modelo)
+let EXP = null, worker = null;
+const selParam = $("expParam");
+const MAPAS = { 0: "4 oasis", 1: "río", 2: "lago central", 3: "dos oasis lejanos", 4: "costa", 5: "muchos charcos" };
+selParam.innerHTML = `<option value="">ninguno (solo réplicas de la base)</option><option value="sistema">Sistema económico (${Object.entries(SISTEMAS).map(([k, s]) => k + " = " + s.nombre).join(", ")})</option><option value="mapaTipo">Tipo de mapa (${Object.entries(MAPAS).map(([k, n]) => k + " = " + n).join(", ")}; desmarca "mismo mapa")</option>` + PERILLAS.map(([k, n]) => `<option value="${k}">${n}</option>`).join("");
+const SUGERENCIAS = { sistema: "1, 2", mapaTipo: "0, 1, 2, 3, 4, 5", maxEdad: "50, 70, 90", edadAdulta: "14, 18, 25", regen: "0.015, 0.035, 0.07", rendimientoCultivo: "10, 20, 35", eficaciaAtaque: "0, 0.7, 2", impuesto: "0, 0.1, 0.2, 0.4", fertilidad: "0.1, 0.3, 0.6", propiedadPrivada: "0, 1", frecuenciaReparto: "1, 6, 12" };
+selParam.onchange = () => { $("expNiveles").placeholder = SUGERENCIAS[selParam.value] || "0, 0.1, 0.2"; $("expNiveles").value = ""; };
+const enAnios = k => k === "maxEdad" || k === "edadAdulta";
+const nombreParam = k => k === "sistema" ? "Sistema económico" : k === "mapaTipo" ? "Tipo de mapa" : (PERILLAS.find(x => x[0] === k) || [k, k])[1];
+function fmtNivel(k, v) { if (!k) return "base"; if (k === "sistema") return SISTEMAS[v] ? SISTEMAS[v].nombre : v; if (k === "mapaTipo") return MAPAS[v] || v; const p = PERILLAS.find(x => x[0] === k); return p ? p[5](v) : v; }
+
+function codigoWorker() {
+  return document.getElementById("modelo").textContent + `
+registrar = () => {};
+function metricasExtra(m) {   // medidas adicionales para la validación
+  const W = m.cfg.ancho, H = m.cfg.alto, res = m.agentes.map(a => a.comida).sort((p, q) => p - q);
+  const mediana = res.length ? res[res.length >> 1] : 0, media = res.length ? res.reduce((s, x) => s + x, 0) / res.length : 0;
+  let dc = 0, nc = 0, dt = 0, nt = 0, com = 0, cap = 0;
+  for (let i = 0; i < W * H; i++) {
+    if (m.tipo[i] !== TIERRA || m.distAgua[i] < 0) continue;
+    dt += m.distAgua[i]; nt++; com += m.comida[i]; cap += m.capComida[i];
+    if (m.casa[i] > 0) { dc += m.distAgua[i]; nc++; }
+  }
+  return { mediaReserva: media, medianaReserva: mediana, distCasasAgua: nc ? dc / nc : 0, distTierraAgua: nt ? dt / nt : 0, casas: nc, comidaRelativa: cap ? com / cap : 0 };
+}
+self.onmessage = e => {
+  const d = e.data;
+  if (d.modo === "validacion") {   // corre cada escenario con varias semillas y devuelve las métricas finales
+    const total = d.escenarios.length * d.replicas; let k = 0;
+    for (const esc of d.escenarios) for (let r = 0; r < d.replicas; r++, k++) {
+      const semilla = (d.semillaBase + r * 7919) >>> 0, m = new Mundo("val", "#000", semilla); m.cfg = { ...d.cfgBase, ...esc.cfg };
+      if (esc.sistema !== undefined) aplicarSistema(m.cfg, esc.sistema);
+      m.semillaMapa = semilla; m.generar();
+      if (esc.escalaFert) {   // escenario con tierra más pobre: se escala la fertilidad de todo el mapa
+        for (let i = 0; i < m.fert.length; i++) { m.fert[i] *= esc.escalaFert; m.capComida[i] = 1 + 9 * m.fert[i]; m.comida[i] = Math.min(m.comida[i], m.capComida[i]); }
+        m.recalcularSuelo();
+      }
+      const T = esc.anios * ANIO;
+      for (let t = 0; t < T; t++) { m.paso(); if (t % 120 === 0) postMessage({ tipo: "progreso", frac: (k * T + t) / (total * T) }); }
+      const h = m.historia, n = h.length, ini = Math.floor(n * 0.7), fin = {};
+      for (const c of Object.keys(h[0])) if (c !== "t") { let s = 0; for (let i = ini; i < n; i++) s += +h[i][c] || 0; fin[c] = s / (n - ini); }
+      const serie = h.map(x => x.pob);
+      postMessage({ tipo: "val", id: esc.id, r, final: fin, extra: metricasExtra(m), extinto: m.extinto, pobSerie: serie.filter((x, i) => i % 12 === 0) });
+    }
+    postMessage({ tipo: "fin" }); return;
+  }
+  const T = d.duracion * ANIO, total = d.niveles.length * d.replicas; let k = 0;
+  for (let li = 0; li < d.niveles.length; li++) for (let r = 0; r < d.replicas; r++, k++) {
+    const semilla = (d.semillaBase + r * 7919) >>> 0;                 // misma réplica = misma semilla en todos los niveles
+    const m = new Mundo("exp", "#000", semilla); m.cfg = { ...d.cfgBase };
+    if (d.param === "sistema") aplicarSistema(m.cfg, d.niveles[li]); else if (d.param) m.cfg[d.param] = d.niveles[li];
+    if (d.mapa) { m.tipo = Uint8Array.from(d.mapa.tipo); m.fert = Float64Array.from(d.mapa.fert); m.generar(null, true); }
+    else { m.semillaMapa = semilla; m.generar(); }
+    for (let t = 0; t < T; t++) { m.paso(); if (t % 120 === 0) postMessage({ tipo: "progreso", frac: (k * T + t) / (total * T) }); }
+    const h = m.historia, n = h.length, ini = Math.floor(n * 0.8), fin = {};
+    for (const c of Object.keys(h[0])) if (c !== "t") { let s = 0; for (let i = ini; i < n; i++) s += +h[i][c] || 0; fin[c] = s / (n - ini); }
+    const serie = h.filter((x, i) => i % 2 === 0);
+    postMessage({ tipo: "replica", li, r, semilla, nivel: d.niveles[li], final: fin, extinto: m.extinto, serie,
+      totales: { nacimientos: m.nacimientos, hambre: m.mHambre, sed: m.mSed, vejez: m.mVejez, siembras: m.siembras, cosechas: m.cosechas, riegos: m.riegos, casas: m.casasConstruidas, migraciones: m.migraciones, ataques: m.ataquesIntentos, robos: m.ataquesOk } });
+  }
+  postMessage({ tipo: "fin" });
+};`;
+}
+
+$("expCorrer").onclick = () => {
+  const param = selParam.value;
+  let niveles = param ? $("expNiveles").value.split(/[,; ]+/).filter(Boolean).map(Number) : [null];
+  if (param && (!niveles.length || niveles.some(isNaN))) { alert("Escribe los niveles separados por comas, por ejemplo: " + (SUGERENCIAS[param] || "0, 0.1, 0.2")); return; }
+  if (param && enAnios(param)) niveles = niveles.map(v => v * ANIO);
+  const A = MUNDOS[0];
+  EXP = { titulo: $("expTitulo").value.trim() || "Experimento sin título", param, niveles, replicas: +$("expReplicas").value || 1, duracion: +$("expDuracion").value || 100,
+          semillaBase: +$("expSemilla").value || 1, mismoMapa: $("expMapa").checked, cfgBase: { ...A.cfg }, semillaMapaBase: A.semillaMapa, resultados: [], fecha: new Date(), t0: performance.now() };
+  if (worker) worker.terminate();
+  worker = new Worker(URL.createObjectURL(new Blob([codigoWorker()], { type: "text/javascript" })));
+  worker.onmessage = e => {
+    const d = e.data;
+    if (d.tipo === "progreso") $("expProgreso").innerHTML = `Corriendo: ${(d.frac * 100).toFixed(0)} %<div class="barra-progreso"><div style="width:${d.frac * 100}%"></div></div>`;
+    else if (d.tipo === "replica") { EXP.resultados.push(d); tablaExperimento(); }
+    else if (d.tipo === "fin") { EXP.segundos = (performance.now() - EXP.t0) / 1000; $("expProgreso").textContent = `Terminado: ${EXP.resultados.length} réplicas en ${EXP.segundos.toFixed(0)} s. Ya puedes descargar el informe y los datos.`; finExperimento(); }
+  };
+  worker.onerror = err => { $("expProgreso").textContent = "Error en el experimento: " + err.message; finExperimento(); };
+  worker.postMessage({ cfgBase: EXP.cfgBase, param, niveles, replicas: EXP.replicas, duracion: EXP.duracion, semillaBase: EXP.semillaBase,
+                       mapa: EXP.mismoMapa ? { tipo: Array.from(A.tipo), fert: Array.from(A.fert) } : null });
+  $("expCorrer").disabled = true; $("expCancelar").disabled = false; for (const id of ["expInforme", "expCSV1", "expCSV2"]) $(id).disabled = true;
+  $("expProgreso").textContent = "Arrancando…"; $("expTabla").innerHTML = "";
+  registrar(`Experimento "${EXP.titulo}": ${niveles.length} nivel(es) × ${EXP.replicas} réplicas × ${EXP.duracion} años.`);
+};
+$("expCancelar").onclick = () => { if (worker) worker.terminate(); worker = null; $("expProgreso").textContent = "Cancelado. Los resultados parciales siguen en la tabla."; finExperimento(); };
+function finExperimento() { $("expCorrer").disabled = false; $("expCancelar").disabled = true; const hay = EXP && EXP.resultados.length > 0; for (const id of ["expInforme", "expCSV1", "expCSV2"]) $(id).disabled = !hay; }
+
+// ---- resumen por nivel
+function resumenPorNivel() {
+  const niveles = EXP.niveles.map((nivel, li) => {
+    const reps = EXP.resultados.filter(r => r.li === li);
+    const fila = { li, nivel, n: reps.length, extintos: reps.filter(r => r.extinto).length, valores: {}, stats: {} };
+    for (const [k] of METRICAS_EXP) { const v = reps.map(r => +r.final[k] || 0); fila.valores[k] = v; fila.stats[k] = { media: media(v), sd: desv(v), ic: ic95(v) }; }
+    return fila;
+  });
+  for (const f of niveles) for (const [k] of METRICAS_EXP) f.stats[k].test = f.li === 0 ? null : welch(f.valores[k], niveles[0].valores[k]);
+  return niveles;
+}
+function tablaExperimento() {
+  const res = resumenPorNivel();
+  let html = `<tr><th>${EXP.param ? nombreParam(EXP.param) : "Condición"}</th><th>n</th><th>extintos</th>` + METRICAS_TABLA.map(k => `<th>${METRICAS_EXP.find(x => x[0] === k)[1]}</th>`).join("") + "</tr>";
+  for (const f of res) {
+    html += `<tr><td>${fmtNivel(EXP.param, f.nivel)}</td><td>${f.n}</td><td>${f.extintos}</td>` + METRICAS_TABLA.map(k => { const s = f.stats[k], d = METRICAS_EXP.find(x => x[0] === k)[2];
+      return `<td>${fmtN(s.media, d)} ± ${fmtN(s.ic, d)}${s.test ? `<br><small style="color:var(--ink-2)">${fmtP(s.test.p)}, d = ${fmtN(s.test.d, 2)}</small>` : ""}</td>`; }).join("") + "</tr>";
+  }
+  $("expTabla").innerHTML = html;
+}
+
+// ---- figuras del informe (canvas fuera de pantalla → PNG)
+function figuraNiveles(res, k, titulo, dec) {
+  const cv = document.createElement("canvas"); cv.width = 520; cv.height = 300; const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#fcfcfb"; ctx.fillRect(0, 0, cv.width, cv.height);
+  const ml = 60, mr = 16, mt = 30, mb = 46, w = cv.width - ml - mr, h = cv.height - mt - mb;
+  let maxV = 0; for (const f of res) maxV = Math.max(maxV, (f.stats[k].media || 0) + (f.stats[k].ic || 0)); if (maxV <= 0) maxV = 1;
+  const Y = v => mt + h - v / maxV * h;
+  ctx.fillStyle = "#0b0b0b"; ctx.font = "bold 13px system-ui"; ctx.textAlign = "left"; ctx.fillText(titulo, ml, 18);
+  ctx.strokeStyle = "#e6e3da"; ctx.fillStyle = "#52514e"; ctx.font = "11px system-ui"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const f of [0, 0.25, 0.5, 0.75, 1]) { const y = Y(maxV * f); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + w, y); ctx.stroke(); ctx.fillText(fmtN(maxV * f, dec), ml - 6, y); }
+  const paso = w / res.length;
+  res.forEach((f, i) => {
+    const x = ml + paso * (i + 0.5), s = f.stats[k], col = COLORES_NIVEL[i % COLORES_NIVEL.length];
+    ctx.fillStyle = col; ctx.beginPath(); ctx.roundRect(x - paso * 0.22, Y(s.media || 0), paso * 0.44, h - (Y(s.media || 0) - mt), [4, 4, 0, 0]); ctx.fill();
+    if (!isNaN(s.ic)) { ctx.strokeStyle = "#0b0b0b"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, Y(s.media + s.ic)); ctx.lineTo(x, Y(Math.max(0, s.media - s.ic))); ctx.moveTo(x - 6, Y(s.media + s.ic)); ctx.lineTo(x + 6, Y(s.media + s.ic)); ctx.moveTo(x - 6, Y(Math.max(0, s.media - s.ic))); ctx.lineTo(x + 6, Y(Math.max(0, s.media - s.ic))); ctx.stroke(); }
+    ctx.fillStyle = "#0b0b0b"; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.font = "11px system-ui"; ctx.fillText(fmtNivel(EXP.param, f.nivel), x, mt + h + 6);
+    ctx.fillStyle = "#52514e"; ctx.fillText(fmtN(s.media, dec), x, Y(s.media + (isNaN(s.ic) ? 0 : s.ic)) - 14);
+  });
+  ctx.fillStyle = "#52514e"; ctx.textAlign = "center"; ctx.fillText(EXP.param ? nombreParam(EXP.param) : "condición", ml + w / 2, mt + h + 24);
+  return cv.toDataURL("image/png");
+}
+function figuraSeries(k, titulo, dec) {
+  const cv = document.createElement("canvas"); cv.width = 520; cv.height = 300; const ctx = cv.getContext("2d");
+  ctx.fillStyle = "#fcfcfb"; ctx.fillRect(0, 0, cv.width, cv.height);
+  const ml = 60, mr = 16, mt = 30, mb = 46, w = cv.width - ml - mr, h = cv.height - mt - mb;
+  const porNivel = EXP.niveles.map((nivel, li) => {
+    const reps = EXP.resultados.filter(r => r.li === li); if (!reps.length) return null;
+    const L = Math.min(...reps.map(r => r.serie.length)); const puntos = [];
+    for (let i = 0; i < L; i++) puntos.push({ t: reps[0].serie[i].t, v: media(reps.map(r => +r.serie[i][k] || 0)) });
+    return { nivel, puntos };
+  }).filter(Boolean);
+  let maxV = 0, maxT = 1; for (const s of porNivel) for (const p of s.puntos) { maxV = Math.max(maxV, p.v); maxT = Math.max(maxT, p.t); } if (maxV <= 0) maxV = 1;
+  const X = t => ml + t / maxT * w, Y = v => mt + h - v / maxV * h;
+  ctx.fillStyle = "#0b0b0b"; ctx.font = "bold 13px system-ui"; ctx.textAlign = "left"; ctx.fillText(titulo + " (media de las réplicas)", ml, 18);
+  ctx.strokeStyle = "#e6e3da"; ctx.fillStyle = "#52514e"; ctx.font = "11px system-ui"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const f of [0, 0.5, 1]) { const y = Y(maxV * f); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ml + w, y); ctx.stroke(); ctx.fillText(fmtN(maxV * f, dec), ml - 6, y); }
+  ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("año 0", ml + 16, mt + h + 6); ctx.fillText("año " + (maxT / ANIO).toFixed(0), ml + w - 20, mt + h + 6);
+  porNivel.forEach((s, i) => { ctx.strokeStyle = COLORES_NIVEL[i % COLORES_NIVEL.length]; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath(); s.puntos.forEach((p, j) => j ? ctx.lineTo(X(p.t), Y(p.v)) : ctx.moveTo(X(p.t), Y(p.v))); ctx.stroke();
+    ctx.fillStyle = COLORES_NIVEL[i % COLORES_NIVEL.length]; ctx.fillRect(ml + 90 * i, mt + h + 26, 10, 10); ctx.fillStyle = "#0b0b0b"; ctx.textAlign = "left"; ctx.fillText(fmtNivel(EXP.param, s.nivel), ml + 90 * i + 14, mt + h + 25); });
+  return cv.toDataURL("image/png");
+}
+
+// ---- interpretación automática y informe
+function interpretacion(res) {
+  const frases = [];
+  if (!EXP.param) {
+    for (const k of METRICAS_TABLA) { const s = res[0].stats[k], m = METRICAS_EXP.find(x => x[0] === k); const cv = s.media ? s.sd / s.media * 100 : NaN;
+      frases.push(`${m[1]}: media ${fmtN(s.media, m[2])} (IC 95 %: ± ${fmtN(s.ic, m[2])}; coeficiente de variación ${fmtN(cv, 0)} %, n = ${res[0].n}).`); }
+    frases.push("Sin parámetro variado, el experimento mide la variabilidad entre réplicas: un coeficiente de variación alto en una métrica indica que esa métrica depende mucho del azar inicial y necesitará más réplicas para detectar efectos.");
+    return frases;
+  }
+  const nombreP = nombreParam(EXP.param).toLowerCase(), base = res[0];
+  for (const k of METRICAS_TABLA) {
+    const m = METRICAS_EXP.find(x => x[0] === k);
+    for (const f of res.slice(1)) {
+      const s = f.stats[k], t = s.test, b = base.stats[k]; if (!t) continue;
+      const cambio = b.media ? (s.media - b.media) / Math.abs(b.media) * 100 : NaN;
+      const signif = !isNaN(t.p) && t.p < 0.05;
+      frases.push(`${m[1]}: con ${nombreP} = ${fmtNivel(EXP.param, f.nivel)} fue ${fmtN(s.media, m[2])} frente a ${fmtN(b.media, m[2])} en ${fmtNivel(EXP.param, base.nivel)} (${isNaN(cambio) ? "" : (cambio >= 0 ? "+" : "") + fmtN(cambio, 0) + " %; "}${fmtP(t.p)}; d = ${fmtN(t.d, 2)}). ${signif ? "Diferencia estadísticamente significativa al 5 %." : "No se detecta una diferencia significativa con estas réplicas."}`);
+    }
+  }
+  const extintos = res.reduce((s, f) => s + f.extintos, 0); if (extintos) frases.push(`Hubo ${extintos} réplica(s) extinta(s); sus valores finales (cero población) entran en las medias y pueden dominar el resultado. Conviene reportarlas aparte.`);
+  frases.push(`Se hicieron ${res.length - 1} comparaciones por métrica contra el nivel base (${METRICAS_TABLA.length * (res.length - 1)} en total); con la corrección de Bonferroni el umbral equivalente al 5 % sería p < ${(0.05 / Math.max(1, METRICAS_TABLA.length * (res.length - 1))).toFixed(4).replace(".", ",")}.`);
+  return frases;
+}
+function csvReplicas() {
+  const cab = ["nivel", "replica", "semilla", "extinto", ...METRICAS_EXP.map(x => x[0]), "nacimientos", "muertes_hambre", "muertes_sed", "muertes_vejez", "siembras", "cosechas", "riegos", "casas_construidas", "migraciones", "ataques", "robos"];
+  const filas = EXP.resultados.map(r => [r.nivel === null ? "base" : r.nivel, r.r, r.semilla, r.extinto ? 1 : 0, ...METRICAS_EXP.map(x => (+r.final[x[0]] || 0).toFixed(4)), r.totales.nacimientos, r.totales.hambre, r.totales.sed, r.totales.vejez, r.totales.siembras, r.totales.cosechas, r.totales.riegos || 0, r.totales.casas || 0, r.totales.migraciones || 0, r.totales.ataques, r.totales.robos].join(","));
+  return cab.join(",") + "\n" + filas.join("\n") + "\n";
+}
+function csvSeries() {
+  const claves = Object.keys(EXP.resultados[0].serie[0]);
+  const lineas = ["nivel,replica,anio," + claves.filter(k => k !== "t").join(",")];
+  for (const r of EXP.resultados) for (const p of r.serie) lineas.push([r.nivel === null ? "base" : r.nivel, r.r, (p.t / ANIO).toFixed(2), ...claves.filter(k => k !== "t").map(k => (+p[k] || 0).toFixed(4))].join(","));
+  return lineas.join("\n") + "\n";
+}
+function descargarTexto(nombre, texto, tipo) { const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([texto], { type: tipo })); a.download = nombre; a.click(); URL.revokeObjectURL(a.href); }
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+function informeHTML() {
+  const res = resumenPorNivel(), nombreP = EXP.param ? nombreParam(EXP.param) : null;
+  const tablaRes = `<table><tr><th>${nombreP || "Condición"}</th><th>n</th><th>extintas</th>` + METRICAS_EXP.map(m => `<th>${m[1]}</th>`).join("") + "</tr>" +
+    res.map(f => `<tr><td>${fmtNivel(EXP.param, f.nivel)}</td><td>${f.n}</td><td>${f.extintos}</td>` + METRICAS_EXP.map(m => { const s = f.stats[m[0]]; return `<td>${fmtN(s.media, m[2])} ± ${fmtN(s.ic, m[2])}<br><small>SD ${fmtN(s.sd, m[2])}${s.test ? `; ${fmtP(s.test.p)}; d = ${fmtN(s.test.d, 2)}` : ""}</small></td>`; }).join("") + "</tr>").join("") + "</table>";
+  const tablaCfg = "<table><tr><th>Parámetro</th><th>Valor</th></tr>" + Object.entries(EXP.cfgBase).map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("") + "</table>";
+  const figs = METRICAS_TABLA.map(k => { const m = METRICAS_EXP.find(x => x[0] === k); return `<figure><img src="${figuraNiveles(res, k, m[1], m[2])}" alt="${m[1]} por nivel"><figcaption>Figura: ${m[1]} al final de la simulación (media del último 20 % de la duración), por nivel. Barras: media; bigotes: IC 95 %.</figcaption></figure>`; }).join("");
+  const series = ["pob", "prod", "gini", "ataq"].map(k => { const m = METRICAS_EXP.find(x => x[0] === k); return `<figure><img src="${figuraSeries(k, m[1], m[2])}" alt="serie ${m[1]}"><figcaption>Figura: evolución de ${m[1].toLowerCase()} a lo largo del tiempo, media de las réplicas de cada nivel.</figcaption></figure>`; }).join("");
+  const interp = interpretacion(res).map(f => `<li>${esc(f)}</li>`).join("");
+  const resumen = EXP.param
+    ? `Se simularon ${EXP.niveles.length} niveles de "${nombreP}" (${EXP.niveles.map(v => fmtNivel(EXP.param, v)).join(", ")}) con ${EXP.replicas} réplicas por nivel durante ${EXP.duracion} años simulados cada una, en un modelo basado en agentes con personas que heredan genes, aprenden habilidades y deciden con una red neuronal evolucionada. Se compararon población, producción, desigualdad, conflicto, agricultura, hambre y longevidad.`
+    : `Se corrieron ${EXP.replicas} réplicas de la misma configuración durante ${EXP.duracion} años simulados para medir la variabilidad del modelo entre semillas.`;
+  const b64 = s => "data:text/csv;charset=utf-8;base64," + btoa(unescape(encodeURIComponent(s)));
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>${esc(EXP.titulo)}</title>
+<style>body{font-family:Georgia,serif;max-width:860px;margin:30px auto;padding:0 16px;color:#111;line-height:1.55;background:#fff}h1{font-size:26px}h2{font-size:19px;margin-top:32px;border-bottom:1px solid #ddd;padding-bottom:4px}h3{font-size:15px}
+table{border-collapse:collapse;font-size:12px;margin:10px 0;font-family:system-ui,sans-serif}td,th{border:1px solid #ddd;padding:4px 6px;text-align:right;vertical-align:top}td:first-child,th:first-child{text-align:left}figure{margin:16px 0}figure img{max-width:100%;border:1px solid #eee}figcaption{font-size:12px;color:#555}
+.nota{background:#f6f3ea;border-left:3px solid #c9b878;padding:8px 12px;font-size:14px}.editar{color:#8a6d00;font-style:italic}.autor{font-size:14px;color:#555}small{color:#555}</style></head><body>
+<h1>${esc(EXP.titulo)}</h1>
+<p class="autor">Informe generado el ${EXP.fecha.toLocaleString("es")} con el simulador "Dos mundos que aprenden" (mundos.html). <span class="editar">[Autores, afiliación]</span></p>
+<h2>Resumen</h2><p>${resumen} <span class="editar">[Completa con el hallazgo principal a partir de la sección de resultados.]</span></p>
+<h2>1. Introducción</h2><p class="editar">[Pregunta de investigación e hipótesis. Por ejemplo: ¿cómo cambia la producción y la desigualdad cuando ${nombreP ? nombreP.toLowerCase() : "la condición"} varía? ¿Qué mecanismo del modelo esperamos que lo explique?]</p>
+<h2>2. Métodos</h2><h3>2.1 El modelo</h3>${DESCRIPCION_MODELO}
+<h3>2.2 Diseño experimental</h3><p>${EXP.param ? `Se varió el parámetro <b>${nombreP}</b> (clave <code>${EXP.param}</code>) en ${EXP.niveles.length} niveles: ${EXP.niveles.map(v => fmtNivel(EXP.param, v) + " (" + v + ")").join(", ")}. El primer nivel se usa como base para las comparaciones.` : "No se varió ningún parámetro; todas las réplicas comparten la configuración base."}
+Cada nivel se simuló con ${EXP.replicas} réplicas independientes de ${EXP.duracion} años (${EXP.duracion * ANIO} meses). Las réplicas usan semillas ${EXP.semillaBase} + 7919·r (r = 0…${EXP.replicas - 1}); la réplica r comparte semilla en todos los niveles (números aleatorios comunes). ${EXP.mismoMapa ? `Todas las réplicas usaron el mismo mapa (el del Mundo A, semilla de mapa ${EXP.semillaMapaBase}).` : "Cada réplica generó su propio mapa a partir de su semilla."} El valor de cada métrica en una réplica es el promedio de las muestras del último 20 % de la duración. Tiempo total de cómputo: ${fmtN(EXP.segundos || 0, 0)} s.</p>
+<h3>2.3 Parámetros de la configuración base</h3>${tablaCfg}
+<h3>2.4 Análisis estadístico</h3><p>Para cada nivel se reporta la media entre réplicas, la desviación estándar (SD) y el intervalo de confianza del 95 % (t de Student con n − 1 grados de libertad). Cada nivel se compara con el nivel base mediante la prueba t de Welch (bilateral) y el tamaño del efecto d de Cohen. Las pruebas no están corregidas por comparaciones múltiples; en la discusión se indica el umbral de Bonferroni equivalente.</p>
+<h2>3. Resultados</h2><p>Valores finales por nivel (media ± IC 95 %; debajo SD, y p y d frente al nivel base):</p>${tablaRes}${figs}<h3>3.1 Dinámica temporal</h3>${series}
+<h2>4. Discusión</h2><div class="nota"><b>Lectura automática de los datos</b> (frases generadas a partir de la tabla; verifica cada una antes de usarla):<ul>${interp}</ul></div>
+<p class="editar">[Interpretación del autor: qué mecanismo del modelo explica los cambios observados, si coincide con la hipótesis, y qué teoría económica se pone a prueba. Recuerda que las conclusiones valen para las reglas de este modelo, no para economías reales.]</p>
+<h2>5. Limitaciones</h2><ul><li>Es un modelo simplificado: los instintos (sed, reserva mínima de comida, pareja) están fijados y no evolucionan; solo las decisiones económicas se aprenden.</li><li>No hay comercio explícito, dinero ni instituciones: la "propiedad" solo existe en la medida en que la defensa disuade el robo.</li><li>La red neuronal tiene memoria nula: cada decisión depende solo de lo que la persona percibe en ese mes.</li><li>Los resultados dependen de constantes arbitrarias (costos, rendimientos, radios de visión); conviene hacer análisis de sensibilidad variando varias de ellas.</li><li>La duración simulada puede ser insuficiente para que la evolución converja; comparar con corridas más largas.</li></ul>
+<h2>6. Reproducibilidad</h2><p>Para repetir el experimento: abre mundos.html, ajusta las perillas del Mundo A a los valores de la tabla 2.3${EXP.mismoMapa ? ", reinicia el Mundo A con la semilla " + EXP.semillaMapaBase + " (o carga su archivo .txt para recuperar el mapa exacto)" : ""}, y en "Experimentos" usa parámetro <code>${EXP.param || "ninguno"}</code>, niveles <code>${EXP.param ? EXP.niveles.map(v => enAnios(EXP.param) ? v / ANIO : v).join(", ") : "–"}</code>, ${EXP.replicas} réplicas, ${EXP.duracion} años, semilla base ${EXP.semillaBase}.</p>
+<h2>Apéndice: datos</h2><p><a download="replicas.csv" href="${b64(csvReplicas())}">Descargar datos por réplica (CSV)</a> · <a download="series.csv" href="${b64(csvSeries())}">Descargar series temporales (CSV)</a></p>
+</body></html>`;
+}
+$("expInforme").onclick = () => descargarTexto("informe_" + EXP.titulo.replace(/[^\wáéíóúñ]+/gi, "_").slice(0, 40) + ".html", informeHTML(), "text/html");
+$("expCSV1").onclick = () => descargarTexto("replicas.csv", csvReplicas(), "text/csv");
+$("expCSV2").onclick = () => descargarTexto("series.csv", csvSeries(), "text/csv");
+
+// ============================================================ validación por hechos estilizados
+const PRUEBAS_VALIDACION = [
+  { id: "malthus", nombre: "Capacidad de carga", referencia: "Malthus (1798); Epstein y Axtell, Sugarscape (1996)",
+    prediccion: "La población se estabiliza en el nivel que la tierra sostiene y es mayor cuanto más tierra fértil hay.",
+    escenarios: [{ id: "malthus_pobre", cfg: {}, escalaFert: 0.35, anios: 120 }, { id: "malthus_rica", cfg: {}, anios: 120 }],
+    evaluar: r => { const p = r.malthus_pobre, q = r.malthus_rica; return { ok: q.pob > p.pob * 1.2 && q.cvFinal < 0.35, detalle: `Población ${p.pob.toFixed(0)} con un tercio de la fertilidad frente a ${q.pob.toFixed(0)} con la fertilidad normal; variación de la población en los últimos 40 años con tierra normal: ${(q.cvFinal * 100).toFixed(0)} % (estable si < 35 %).` }; } },
+  { id: "riqueza", nombre: "Distribución de riqueza sesgada", referencia: "Epstein y Axtell, Sugarscape (1996); Pareto (1897)",
+    prediccion: "Aun partiendo de personas parecidas, la riqueza acaba muy desigual: muchos con poco y pocos con mucho (Gini entre 0,25 y 0,65; media mayor que la mediana).",
+    escenarios: [{ id: "riq_base", cfg: {}, anios: 120 }],
+    evaluar: r => { const b = r.riq_base; return { ok: b.gini >= 0.25 && b.gini <= 0.65 && b.mediaReserva > b.medianaReserva, detalle: `Gini de las reservas ${b.gini.toFixed(2)}; reserva media ${b.mediaReserva.toFixed(1)} frente a mediana ${b.medianaReserva.toFixed(1)}.` }; } },
+  { id: "incentivos", nombre: "Redistribución total y producción", referencia: "Okun (1975); teoría estándar de incentivos",
+    prediccion: "Cuando todo lo producido se reparte por igual cada mes, la producción total cae (y con ella la población que se sostiene) respecto a no repartir nada.",
+    escenarios: [{ id: "inc_0", cfg: { impuesto: 0 }, anios: 120 }, { id: "inc_100", cfg: { impuesto: 1, frecuenciaReparto: 1 }, anios: 120 }],
+    evaluar: r => { const a = r.inc_0, b = r.inc_100, pa = a.prod / Math.max(1, a.pob), pb = b.prod / Math.max(1, b.pob); return { ok: b.prod < a.prod * 0.7, detalle: `Producción total por mes: ${a.prod.toFixed(0)} sin reparto frente a ${b.prod.toFixed(0)} con reparto total; por persona ${pa.toFixed(2)} frente a ${pb.toFixed(2)}; población ${a.pob.toFixed(0)} frente a ${b.pob.toFixed(0)}. En este modelo el efecto actúa sobre todo por la reproducción: con reparto total, producir más no cambia la reserva propia y nacen menos hijos.` }; } },
+  { id: "propiedad", nombre: "Derechos de propiedad y protección", referencia: "Demsetz (1967); North (1990)",
+    prediccion: "Con propiedad protegida por un Estado hay menos depredación y más inversión productiva (cultivos) que en una anarquía sin propiedad.",
+    escenarios: [{ id: "prop_anarquia", sistema: 3, cfg: {}, anios: 120 }, { id: "prop_estado", sistema: 4, cfg: {}, anios: 120 }],
+    evaluar: r => { const a = r.prop_anarquia, b = r.prop_estado; return { ok: b.ataq < a.ataq * 0.7 && b.cultivos > a.cultivos, detalle: `Ataques por mes ${a.ataq.toFixed(1)} en anarquía frente a ${b.ataq.toFixed(1)} con Estado; parcelas cultivadas ${a.cultivos.toFixed(0)} frente a ${b.cultivos.toFixed(0)}.` }; } },
+  { id: "fertilidad", nombre: "Respuesta demográfica a la fecundidad", referencia: "Demografía básica; modelos de crecimiento logístico (Verhulst 1838)",
+    prediccion: "A igual tierra, una fecundidad mayor sostiene más población, hasta el límite que imponen los recursos.",
+    escenarios: [{ id: "fert_baja", cfg: { fertilidad: 0.08 }, anios: 120 }, { id: "fert_alta", cfg: { fertilidad: 0.6 }, anios: 120 }],
+    evaluar: r => { const a = r.fert_baja, b = r.fert_alta; return { ok: b.pob > a.pob * 1.15, detalle: `Población ${a.pob.toFixed(0)} con fecundidad baja frente a ${b.pob.toFixed(0)} con fecundidad alta.` }; } },
+  { id: "agua", nombre: "Asentamiento junto al agua", referencia: "Von Thünen (1826); Christaller (1933); patrón arqueológico de asentamientos ribereños",
+    prediccion: "Las viviendas se concentran mucho más cerca del agua que la tierra disponible en general.",
+    escenarios: [{ id: "agua_base", cfg: {}, anios: 80 }],
+    evaluar: r => { const b = r.agua_base; return { ok: b.casas > 5 && b.distCasasAgua < 0.7 * b.distTierraAgua, detalle: `Distancia media al agua: viviendas ${b.distCasasAgua.toFixed(1)} casillas frente a ${b.distTierraAgua.toFixed(1)} de la tierra en general (${b.casas.toFixed(0)} viviendas).` }; } },
+];
+let VAL = null, workerVal = null;
+$("valCorrer").onclick = () => {
+  const escenarios = PRUEBAS_VALIDACION.flatMap(p => p.escenarios);
+  VAL = { res: {}, t0: performance.now() };
+  if (workerVal) workerVal.terminate();
+  workerVal = new Worker(URL.createObjectURL(new Blob([codigoWorker()], { type: "text/javascript" })));
+  workerVal.onmessage = e => {
+    const d = e.data;
+    if (d.tipo === "progreso") $("valProgreso").innerHTML = `Corriendo: ${(d.frac * 100).toFixed(0)} %<div class="barra-progreso"><div style="width:${d.frac * 100}%"></div></div>`;
+    else if (d.tipo === "val") { (VAL.res[d.id] = VAL.res[d.id] || []).push(d); }
+    else if (d.tipo === "fin") { $("valProgreso").textContent = `Terminada en ${((performance.now() - VAL.t0) / 1000).toFixed(0)} s.`; tablaValidacion(); $("valCorrer").disabled = false; $("valCancelar").disabled = true; }
+  };
+  workerVal.onerror = err => { $("valProgreso").textContent = "Error: " + err.message; $("valCorrer").disabled = false; $("valCancelar").disabled = true; };
+  workerVal.postMessage({ modo: "validacion", escenarios, replicas: 2, semillaBase: 2024, cfgBase: { ...BASE_CFG } });
+  $("valCorrer").disabled = true; $("valCancelar").disabled = false; $("valTabla").innerHTML = ""; $("valResumen").textContent = ""; $("valProgreso").textContent = "Arrancando…";
+};
+$("valCancelar").onclick = () => { if (workerVal) workerVal.terminate(); workerVal = null; $("valProgreso").textContent = "Cancelada."; $("valCorrer").disabled = false; $("valCancelar").disabled = true; };
+function promedioEscenario(reps) {   // promedia las métricas finales y extra de las réplicas de un escenario
+  const out = {}, claves = new Set(reps.flatMap(r => [...Object.keys(r.final), ...Object.keys(r.extra)]));
+  for (const k of claves) out[k] = reps.reduce((s, r) => s + (+(k in r.final ? r.final[k] : r.extra[k]) || 0), 0) / reps.length;
+  const cvs = reps.map(r => { const u = r.pobSerie.slice(-8); const mu = media(u); return mu ? (desv(u) || 0) / mu : 1; });   // últimos 8 puntos (cada 5 años = 40 años)
+  out.cvFinal = media(cvs); out.extintos = reps.filter(r => r.extinto).length; return out;
+}
+function tablaValidacion() {
+  const prom = {}; for (const id in VAL.res) prom[id] = promedioEscenario(VAL.res[id]);
+  let ok = 0, html = "<tr><th>Prueba</th><th>Modelo o teoría de referencia</th><th>Predicción</th><th>Resultado en este modelo</th><th>Estado</th></tr>";
+  for (const p of PRUEBAS_VALIDACION) {
+    const faltan = p.escenarios.some(e => !prom[e.id]);
+    let r = { ok: false, detalle: "No se pudo evaluar (faltan réplicas)." }; if (!faltan) { try { r = p.evaluar(prom); } catch (e) { r = { ok: false, detalle: "Error al evaluar: " + e.message }; } }
+    if (r.ok) ok++;
+    html += `<tr><td><b>${p.nombre}</b></td><td style="white-space:normal">${p.referencia}</td><td style="white-space:normal">${p.prediccion}</td><td style="white-space:normal">${r.detalle}</td><td class="${r.ok ? "estado-ok" : "estado-mal"}">${r.ok ? "✓ reproduce" : "✗ no reproduce"}</td></tr>`;
+  }
+  $("valTabla").innerHTML = html;
+  $("valResumen").innerHTML = `<b>${ok} de ${PRUEBAS_VALIDACION.length} regularidades reproducidas</b> (2 semillas por escenario, 80 a 120 años cada uno, configuración por defecto). Una prueba que no se reproduce no invalida el modelo: señala dónde difiere de los modelos de referencia y conviene explicarlo en el informe. Esta validación es cualitativa (hechos estilizados), no una calibración con datos empíricos.`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# LaTeX
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.toc
+paper/compilacion.log
+paper/manuscrito_v*.pdf
+# Python
+__pycache__/
+# temporales
+*.tmp
+economia_prueba.txt

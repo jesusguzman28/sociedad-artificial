@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Economía que aprende</title>
+<style>
+  :root { --bg:#f5f3ee; --surface:#fcfcfb; --texto:#0b0b0b; --texto2:#52514e; --borde:#d9d4c7; --acento:#2a78d6;
+          --s-pob:#2a78d6; --s-prod:#1baf7a; --s-ataq:#eb6834; --s-gini:#4a3aa7; --s-ahorro:#eda100; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:16px; font-family:system-ui, Segoe UI, sans-serif; background:var(--bg); color:var(--texto); }
+  h1 { font-size:20px; margin:0 0 4px; }
+  p.sub { margin:0 0 14px; color:var(--texto2); font-size:14px; max-width:900px; }
+  .layout { display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start; }
+  .col { display:flex; flex-direction:column; gap:12px; }
+  canvas.mapa { background:var(--surface); border:1px solid var(--borde); border-radius:6px; max-width:100%; }
+  .panel { background:var(--surface); border:1px solid var(--borde); border-radius:6px; padding:14px; width:340px; font-size:14px; }
+  .panel h2 { font-size:13px; margin:14px 0 6px; text-transform:uppercase; letter-spacing:.04em; color:var(--texto2); }
+  .panel h2:first-child { margin-top:0; }
+  button { background:var(--acento); color:#fff; border:0; border-radius:4px; padding:7px 11px; margin:2px 2px 2px 0; cursor:pointer; font-size:14px; }
+  button.sec { background:#e9e5da; color:#222; }
+  .perilla { display:grid; grid-template-columns:1fr 120px 54px; align-items:center; gap:6px; margin:3px 0; font-size:13px; }
+  .perilla input[type=range] { width:100%; }
+  .perilla b { font-weight:500; text-align:right; font-variant-numeric:tabular-nums; }
+  .stats { display:grid; grid-template-columns:1fr auto; gap:3px 10px; font-variant-numeric:tabular-nums; }
+  #log { height:120px; overflow:auto; background:#faf8f3; border:1px solid var(--borde); padding:6px; font:12px/1.5 Consolas, monospace; white-space:pre-wrap; }
+  .graficas { display:grid; grid-template-columns:repeat(2, 1fr); gap:10px; width:760px; max-width:100%; }
+  .grafica { background:var(--surface); border:1px solid var(--borde); border-radius:6px; padding:8px 8px 4px; position:relative; }
+  .grafica .titulo { font-size:12px; color:var(--texto2); margin:0 0 2px 4px; display:flex; justify-content:space-between; }
+  .grafica .titulo b { color:var(--texto); font-weight:600; font-variant-numeric:tabular-nums; }
+  .grafica canvas { width:100%; height:110px; display:block; }
+  .tooltip { position:absolute; pointer-events:none; background:#fff; border:1px solid var(--borde); border-radius:4px; padding:3px 7px;
+             font-size:12px; color:var(--texto); box-shadow:0 2px 6px rgba(0,0,0,.08); display:none; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .leyenda { font-size:12px; color:var(--texto2); }
+  .leyenda span { margin-right:12px; white-space:nowrap; }
+  .cuadro { display:inline-block; width:11px; height:11px; vertical-align:middle; border-radius:50%; margin-right:3px; }
+  details { font-size:13px; color:var(--texto2); }
+  details li { margin:3px 0; }
+</style>
+</head>
+<body>
+<h1>Economía que aprende: comida, ahorro y defensa</h1>
+<p class="sub">Cada punto es un agente con un cerebro diminuto. Nadie le dice qué hacer: los que sobreviven y ahorran lo suficiente se reproducen con pequeñas mutaciones, y los demás mueren. Mueve las perillas y observa qué conductas aparecen.</p>
+
+<div class="layout">
+  <div class="col">
+    <canvas id="mapa" class="mapa" width="760" height="480"></canvas>
+    <p class="leyenda" style="margin:0">
+      <span>Verde oscuro: parcela con mucha comida</span>
+      <span><i class="cuadro" style="background:#eb6834"></i>agente (más intenso = más ahorro)</span>
+      <span>borde grueso = más defensa</span>
+      <span style="color:#e34948">línea roja = ataque</span>
+    </p>
+    <div class="graficas">
+      <div class="grafica"><div class="titulo"><span>Población viva</span><b id="vPob">-</b></div><canvas id="gPob"></canvas></div>
+      <div class="grafica"><div class="titulo"><span>Producción por turno</span><b id="vProd">-</b></div><canvas id="gProd"></canvas></div>
+      <div class="grafica"><div class="titulo"><span>Ataques por turno</span><b id="vAtaq">-</b></div><canvas id="gAtaq"></canvas></div>
+      <div class="grafica"><div class="titulo"><span>Desigualdad (Gini del ahorro, 0 = iguales)</span><b id="vGini">-</b></div><canvas id="gGini"></canvas></div>
+      <div class="grafica"><div class="titulo"><span>Ahorro promedio (comida guardada)</span><b id="vAhorro">-</b></div><canvas id="gAhorro"></canvas></div>
+      <div class="grafica"><div class="titulo"><span>Inversión promedio: herramienta y defensa</span><b id="vInv">-</b></div><canvas id="gInv"></canvas>
+        <div class="leyenda" style="margin:2px 4px 0"><span><i class="cuadro" style="background:#1baf7a;border-radius:2px"></i>herramienta</span><span><i class="cuadro" style="background:#4a3aa7;border-radius:2px"></i>defensa</span></div></div>
+    </div>
+    <div id="tooltip" class="tooltip"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Control</h2>
+    <button id="btnCorrer">▶ Correr</button>
+    <button id="btnReiniciar" class="sec">Reiniciar mundo</button>
+    <label style="display:block;margin:6px 0"><input type="checkbox" id="chkRapido"> Modo rápido (sin dibujar el mapa)</label>
+    <div class="perilla"><span>Turnos por cuadro</span><input type="range" id="vel" min="1" max="30" value="2"><b id="velTxt">2</b></div>
+
+    <h2>Perillas de la economía</h2>
+    <div id="perillas"></div>
+
+    <h2>Estado</h2>
+    <div class="stats">
+      <span>Turno</span><b id="sTurno">0</b>
+      <span>Población</span><b id="sPob">0</b>
+      <span>Generación promedio</span><b id="sGen">0</b>
+      <span>Nacimientos</span><b id="sNac">0</b>
+      <span>Muertes por hambre</span><b id="sHambre">0</b>
+      <span>Muertes por vejez</span><b id="sVejez">0</b>
+      <span>Ataques (logrados / intentos)</span><b id="sAtaques">0 / 0</b>
+      <span>Comida robada en total</span><b id="sRobado">0</b>
+    </div>
+
+    <h2>Aprendizaje (.txt)</h2>
+    <button id="btnDescargar" class="sec">Descargar economia.txt</button>
+    <button id="btnCargar" class="sec">Cargar .txt</button>
+    <input type="file" id="archivo" accept=".txt" style="display:none">
+
+    <h2>Registro</h2>
+    <div id="log"></div>
+
+    <details style="margin-top:10px"><summary>Experimentos sugeridos</summary>
+      <ul>
+        <li>Sube "costo de defensa" al máximo y mira si los ataques suben.</li>
+        <li>Pon "pudrición" en 0: ¿ahorran más o se vuelven acumuladores?</li>
+        <li>Pon "eficacia del ataque" en 0 (robar es imposible): ¿cambia la producción?</li>
+        <li>Activa un impuesto del 20 %: ¿baja la desigualdad? ¿baja la producción?</li>
+        <li>Baja la "regeneración" para crear escasez y mira la población.</li>
+      </ul>
+      Deja correr al menos 3000 turnos en modo rápido antes de sacar conclusiones.
+    </details>
+  </div>
+</div>
+
+<script>
+// ============================================================ configuración
+const CFG = {
+  ancho: 44, alto: 28, agentesIni: 40, maxPob: 160, maxEdad: 600,
+  regen: 0.04,          // fracción de la capacidad de la parcela que crece por turno
+  pudricion: 0.02,      // fracción del almacén que se pudre por turno
+  costoHerr: 8,         // comida para subir un nivel de herramienta
+  costoDef: 6,          // comida para subir un nivel de defensa
+  eficaciaAtaque: 0.7,  // fuerza del atacante frente a la defensa de la víctima
+  botin: 0.35,          // fracción del almacén que se roba en un ataque exitoso
+  impuesto: 0,          // fracción del almacén que se recauda y reparte por igual cada 10 turnos
+  costoRepro: 25,       // comida necesaria para reproducirse
+  gastoEnergia: 2, energiaComida: 10, costoAtaque: 6, maxHerr: 6, maxDef: 6,
+};
+const PERILLAS = [
+  ["regen", "Regeneración de comida", 0.005, 0.15, 0.005, v => (v * 100).toFixed(1) + "%"],
+  ["pudricion", "Pudrición del almacén", 0, 0.10, 0.005, v => (v * 100).toFixed(1) + "%"],
+  ["costoHerr", "Costo de herramienta", 2, 30, 1, v => v],
+  ["costoDef", "Costo de defensa", 2, 30, 1, v => v],
+  ["eficaciaAtaque", "Eficacia del ataque", 0, 4, 0.1, v => v.toFixed(1)],
+  ["botin", "Botín robado", 0, 1, 0.05, v => (v * 100).toFixed(0) + "%"],
+  ["impuesto", "Impuesto redistributivo", 0, 0.5, 0.01, v => (v * 100).toFixed(0) + "%"],
+  ["costoRepro", "Costo de reproducirse", 10, 60, 1, v => v],
+];
+const ACCIONES = ["ir a comida", "recolectar", "herramienta", "defensa", "atacar", "vagar"];
+const N_IN = 10, N_OC = 8, N_OUT = ACCIONES.length;
+const N_PESOS = N_IN * N_OC + (N_OC + 1) * N_OUT;
+
+// ============================================================ utilidades
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+function gini(valores) {
+  const v = valores.slice().sort((a, b) => a - b), n = v.length;
+  if (n < 2) return 0;
+  const suma = v.reduce((a, b) => a + b, 0);
+  if (suma <= 0) return 0;
+  let acum = 0;
+  for (let i = 0; i < n; i++) acum += (i + 1) * v[i];
+  return (2 * acum) / (n * suma) - (n + 1) / n;
+}
+
+// ============================================================ cerebro
+class Cerebro {
+  constructor(pesos) { this.pesos = pesos || Float64Array.from({ length: N_PESOS }, () => gauss() * 0.5); }
+  decidir(entradas) {
+    const p = this.pesos, oc = new Float64Array(N_OC);
+    let k = 0;
+    for (let j = 0; j < N_OC; j++) { let s = 0; for (let i = 0; i < N_IN; i++) s += entradas[i] * p[k++]; oc[j] = Math.tanh(s); }
+    let mejor = 0, mejorV = -Infinity;
+    for (let o = 0; o < N_OUT; o++) {
+      let s = p[k++]; for (let j = 0; j < N_OC; j++) s += oc[j] * p[k++];
+      if (s > mejorV) { mejorV = s; mejor = o; }
+    }
+    return mejor;
+  }
+  mutado() {
+    const p = Float64Array.from(this.pesos);
+    for (let i = 0; i < p.length; i++) if (Math.random() < 0.08) p[i] += gauss() * 0.4;
+    return new Cerebro(p);
+  }
+}
+
+// ============================================================ mundo
+let M = null, corriendo = false;
+
+function nuevoMundo(cerebrosIniciales) {
+  const W = CFG.ancho, H = CFG.alto;
+  const fert = new Float64Array(W * H);
+  for (let b = 0; b < 7; b++) {                 // manchas fértiles
+    const cx = Math.random() * W, cy = Math.random() * H, sig = 3 + Math.random() * 4, amp = 0.5 + Math.random() * 0.6;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const d2 = (x - cx) ** 2 + (y - cy) ** 2; fert[y * W + x] += amp * Math.exp(-d2 / (2 * sig * sig));
+    }
+  }
+  const cap = Float64Array.from(fert, f => 1 + 9 * clamp(f, 0, 1));
+  M = {
+    W, H, cap, comida: Float64Array.from(cap), agentes: [], turno: 0, flashes: [],
+    nacimientos: 0, muertesHambre: 0, muertesVejez: 0, ataquesOk: 0, ataquesIntentos: 0, robado: 0,
+    prodAcum: 0, ataqAcum: 0, historia: [], salon: [], siguienteId: 1,
+  };
+  for (let i = 0; i < CFG.agentesIni; i++) {
+    const cerebro = cerebrosIniciales && cerebrosIniciales.length ? cerebrosIniciales[i % cerebrosIniciales.length].mutado() : new Cerebro();
+    M.agentes.push(nuevoAgente(Math.floor(Math.random() * W), Math.floor(Math.random() * H), cerebro, 1, 8));
+  }
+}
+
+function nuevoAgente(x, y, cerebro, gen, almacen) {
+  return { id: M.siguienteId++, x, y, energia: 80, almacen, herr: 0, def: 0, edad: 0, hijos: 0, gen, cerebro, color: 0 };
+}
+
+function turno() {
+  const W = M.W, H = M.H, ag = M.agentes;
+  // regeneración de parcelas
+  for (let i = 0; i < W * H; i++) M.comida[i] = Math.min(M.cap[i], M.comida[i] + CFG.regen * M.cap[i]);
+  // ocupación
+  const ocup = new Map();
+  for (const a of ag) { const k = a.y * W + a.x; (ocup.get(k) || ocup.set(k, []).get(k)).push(a); }
+  // orden aleatorio
+  for (let i = ag.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ag[i], ag[j]] = [ag[j], ag[i]]; }
+
+  let produccion = 0, ataques = 0;
+  const nacidos = [];
+  for (const a of ag) {
+    if (a.energia <= 0) continue;
+    a.edad++; a.energia -= CFG.gastoEnergia;
+    a.almacen *= (1 - CFG.pudricion);
+    while (a.energia < 60 && a.almacen >= 1) { a.almacen -= 1; a.energia = Math.min(100, a.energia + CFG.energiaComida); }
+    if (a.energia <= 0) continue;
+
+    // percepción
+    let mejorCom = -1, mx = a.x, my = a.y, vecino = null;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const nx = a.x + dx, ny = a.y + dy;
+      if (nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+      const c = M.comida[ny * W + nx];
+      if ((dx || dy) && c > mejorCom) { mejorCom = c; mx = nx; my = ny; }
+      const lista = ocup.get(ny * W + nx);
+      if (lista) for (const b of lista) if (b !== a && b.energia > 0 && (!vecino || b.almacen > vecino.almacen)) vecino = b;
+    }
+    const aqui = M.comida[a.y * W + a.x];
+    const entradas = [a.energia / 100, Math.min(1, a.almacen / 50), aqui / 10, mejorCom / 10, a.herr / CFG.maxHerr, a.def / CFG.maxDef,
+                      vecino ? 1 : 0, vecino ? Math.min(1, vecino.almacen / 50) : 0, vecino ? vecino.def / CFG.maxDef : 0, 1];
+    const accion = a.cerebro.decidir(entradas);
+    a.color = accion;
+
+    // acción
+    if (accion === 0) { a.x = mx; a.y = my; }
+    else if (accion === 1) {
+      const q = Math.min(aqui, 1 + 0.5 * a.herr);
+      M.comida[a.y * W + a.x] -= q; a.almacen += q; produccion += q;
+    }
+    else if (accion === 2) { if (a.herr < CFG.maxHerr && a.almacen >= CFG.costoHerr) { a.almacen -= CFG.costoHerr; a.herr++; } }
+    else if (accion === 3) { if (a.def < CFG.maxDef && a.almacen >= CFG.costoDef) { a.almacen -= CFG.costoDef; a.def++; } }
+    else if (accion === 4) {
+      if (vecino && a.energia > CFG.costoAtaque) {
+        a.energia -= CFG.costoAtaque; ataques++; M.ataquesIntentos++;
+        const p = CFG.eficaciaAtaque / (CFG.eficaciaAtaque + vecino.def);
+        const ok = Math.random() < p;
+        if (ok) { const r = vecino.almacen * CFG.botin; vecino.almacen -= r; a.almacen += r; M.robado += r; M.ataquesOk++; }
+        else a.energia -= 4;
+        M.flashes.push({ x1: a.x, y1: a.y, x2: vecino.x, y2: vecino.y, ok, ttl: 10 });
+      }
+    }
+    else { const dx = Math.floor(Math.random() * 3) - 1, dy = Math.floor(Math.random() * 3) - 1; a.x = clamp(a.x + dx, 0, W - 1); a.y = clamp(a.y + dy, 0, H - 1); }
+
+    // reproducción (automática si tiene ahorro suficiente)
+    if (a.almacen >= CFG.costoRepro && a.energia >= 50 && ag.length + nacidos.length < CFG.maxPob) {
+      a.almacen -= CFG.costoRepro; a.hijos++; M.nacimientos++;
+      const h = nuevoAgente(clamp(a.x + Math.floor(Math.random() * 3) - 1, 0, W - 1), clamp(a.y + Math.floor(Math.random() * 3) - 1, 0, H - 1),
+                            a.cerebro.mutado(), a.gen + 1, CFG.costoRepro * 0.5);
+      nacidos.push(h);
+    }
+  }
+
+  // impuesto redistributivo
+  if (CFG.impuesto > 0 && M.turno % 10 === 0) {
+    let caja = 0, vivos = 0;
+    for (const a of ag) if (a.energia > 0) { const t = a.almacen * CFG.impuesto; a.almacen -= t; caja += t; vivos++; }
+    if (vivos) for (const a of ag) if (a.energia > 0) a.almacen += caja / vivos;
+  }
+
+  // muertes y salón de la fama
+  const vivos = [];
+  for (const a of ag) {
+    const muere = a.energia <= 0 || a.edad > CFG.maxEdad;
+    if (!muere) { vivos.push(a); continue; }
+    if (a.energia <= 0) M.muertesHambre++; else M.muertesVejez++;
+    M.salon.push({ hijos: a.hijos, edad: a.edad, gen: a.gen, pesos: a.cerebro.pesos });
+    M.salon.sort((p, q) => q.hijos - p.hijos || q.edad - p.edad); if (M.salon.length > 8) M.salon.length = 8;
+  }
+  M.agentes = vivos.concat(nacidos);
+
+  // repoblación si casi se extinguen
+  if (M.agentes.length < 5) {
+    const base = M.salon.map(s => new Cerebro(s.pesos));
+    for (let i = 0; i < 20; i++) {
+      const c = base.length ? base[i % base.length].mutado() : new Cerebro();
+      M.agentes.push(nuevoAgente(Math.floor(Math.random() * W), Math.floor(Math.random() * H), c, 1, 8));
+    }
+    registrar(`Turno ${M.turno}: casi extinción. Se repuebla con los mejores cerebros guardados.`);
+  }
+
+  M.turno++; M.prodAcum += produccion; M.ataqAcum += ataques;
+  for (const f of M.flashes) f.ttl--; M.flashes = M.flashes.filter(f => f.ttl > 0);
+  if (M.turno % 5 === 0) muestrear();
+}
+
+function muestrear() {
+  const ag = M.agentes, n = ag.length || 1;
+  const prom = f => ag.reduce((s, a) => s + f(a), 0) / n;
+  M.historia.push({
+    t: M.turno, pob: ag.length, prod: M.prodAcum / 5, ataq: M.ataqAcum / 5,
+    gini: gini(ag.map(a => a.almacen)), ahorro: prom(a => a.almacen), herr: prom(a => a.herr), def: prom(a => a.def), gen: prom(a => a.gen),
+  });
+  M.prodAcum = 0; M.ataqAcum = 0;
+  if (M.turno % 1000 === 0) {
+    const h = M.historia[M.historia.length - 1];
+    registrar(`Turno ${M.turno}: ${h.pob} vivos, producción ${h.prod.toFixed(1)}/turno, ${h.ataq.toFixed(2)} ataques/turno, Gini ${h.gini.toFixed(2)}, herramienta ${h.herr.toFixed(1)}, defensa ${h.def.toFixed(1)}.`);
+  }
+}
+
+// ============================================================ dibujo
+const mapa = document.getElementById("mapa"), mctx = mapa.getContext("2d");
+function mezcla(a, b, t) { return `rgb(${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)})`; }
+const VERDE_CLARO = [240, 243, 236], VERDE_OSCURO = [31, 122, 58];
+
+function dibujarMapa() {
+  const W = M.W, H = M.H, tam = Math.floor(Math.min(mapa.width / W, mapa.height / H));
+  const ox = Math.floor((mapa.width - tam * W) / 2), oy = Math.floor((mapa.height - tam * H) / 2);
+  mctx.fillStyle = "#fcfcfb"; mctx.fillRect(0, 0, mapa.width, mapa.height);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    mctx.fillStyle = mezcla(VERDE_CLARO, VERDE_OSCURO, M.comida[y * W + x] / 10);
+    mctx.fillRect(ox + x * tam, oy + y * tam, tam - 1, tam - 1);
+  }
+  for (const f of M.flashes) {
+    mctx.strokeStyle = f.ok ? `rgba(227,73,72,${f.ttl / 10})` : `rgba(120,120,120,${f.ttl / 10})`; mctx.lineWidth = 2;
+    mctx.beginPath(); mctx.moveTo(ox + f.x1 * tam + tam / 2, oy + f.y1 * tam + tam / 2); mctx.lineTo(ox + f.x2 * tam + tam / 2, oy + f.y2 * tam + tam / 2); mctx.stroke();
+  }
+  for (const a of M.agentes) {
+    const cx = ox + a.x * tam + tam / 2, cy = oy + a.y * tam + tam / 2;
+    mctx.beginPath(); mctx.arc(cx, cy, tam * 0.36, 0, Math.PI * 2);
+    mctx.fillStyle = `rgba(235,104,52,${0.3 + 0.7 * Math.min(1, a.almacen / 40)})`; mctx.fill();
+    if (a.def > 0) { mctx.lineWidth = 0.5 + a.def * 0.5; mctx.strokeStyle = "#0b0b0b"; mctx.stroke(); }
+  }
+}
+
+function dibujarGrafica(id, series, formato) {
+  const cv = document.getElementById(id), ctx = cv.getContext("2d");
+  const ancho = cv.clientWidth, alto = cv.clientHeight;
+  if (cv.width !== ancho * devicePixelRatio) { cv.width = ancho * devicePixelRatio; cv.height = alto * devicePixelRatio; }
+  ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+  ctx.clearRect(0, 0, ancho, alto);
+  const h = M.historia; if (h.length < 2) return;
+  const ml = 34, mr = 8, mt = 6, mb = 16;
+  let maxV = 0; for (const s of series) for (const p of h) maxV = Math.max(maxV, p[s.clave]);
+  if (maxV <= 0) maxV = 1;
+  const t0 = h[0].t, t1 = h[h.length - 1].t;
+  const X = t => ml + (t - t0) / (t1 - t0 || 1) * (ancho - ml - mr), Y = v => mt + (1 - v / maxV) * (alto - mt - mb);
+  ctx.strokeStyle = "#e6e3da"; ctx.lineWidth = 1; ctx.fillStyle = "#52514e"; ctx.font = "10px system-ui"; ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const f of [0, 0.5, 1]) { const y = Y(maxV * f); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(ancho - mr, y); ctx.stroke(); ctx.fillText(formato(maxV * f), ml - 4, y); }
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  ctx.fillText("turno " + t0, ml + 20, alto - mb + 3); ctx.fillText("turno " + t1, ancho - mr - 24, alto - mb + 3);
+  const paso = Math.max(1, Math.floor(h.length / (ancho - ml - mr)));
+  for (const s of series) {
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath();
+    for (let i = 0; i < h.length; i += paso) { const x = X(h[i].t), y = Y(h[i][s.clave]); i ? ctx.lineTo(x, y) : ctx.moveTo(x, y); }
+    const u = h[h.length - 1]; ctx.lineTo(X(u.t), Y(u[s.clave])); ctx.stroke();
+  }
+  cv._datos = { series, formato, X, ml, mr, ancho };
+}
+
+const GRAFICAS = [
+  ["gPob", [{ clave: "pob", color: "#2a78d6", nombre: "población" }], v => v.toFixed(0), "vPob", h => h.pob],
+  ["gProd", [{ clave: "prod", color: "#1baf7a", nombre: "producción" }], v => v.toFixed(0), "vProd", h => h.prod.toFixed(1)],
+  ["gAtaq", [{ clave: "ataq", color: "#eb6834", nombre: "ataques" }], v => v.toFixed(1), "vAtaq", h => h.ataq.toFixed(2)],
+  ["gGini", [{ clave: "gini", color: "#4a3aa7", nombre: "Gini" }], v => v.toFixed(2), "vGini", h => h.gini.toFixed(2)],
+  ["gAhorro", [{ clave: "ahorro", color: "#eda100", nombre: "ahorro" }], v => v.toFixed(0), "vAhorro", h => h.ahorro.toFixed(1)],
+  ["gInv", [{ clave: "herr", color: "#1baf7a", nombre: "herramienta" }, { clave: "def", color: "#4a3aa7", nombre: "defensa" }], v => v.toFixed(1), "vInv", h => h.herr.toFixed(1) + " / " + h.def.toFixed(1)],
+];
+
+function dibujarTodo(soloGraficas) {
+  if (!soloGraficas) dibujarMapa();
+  const u = M.historia[M.historia.length - 1];
+  for (const [id, series, fmt, idV, val] of GRAFICAS) { dibujarGrafica(id, series, fmt); if (u) document.getElementById(idV).textContent = val(u); }
+  const ag = M.agentes;
+  $("sTurno").textContent = M.turno; $("sPob").textContent = ag.length;
+  $("sGen").textContent = (ag.reduce((s, a) => s + a.gen, 0) / (ag.length || 1)).toFixed(1);
+  $("sNac").textContent = M.nacimientos; $("sHambre").textContent = M.muertesHambre; $("sVejez").textContent = M.muertesVejez;
+  $("sAtaques").textContent = M.ataquesOk + " / " + M.ataquesIntentos; $("sRobado").textContent = M.robado.toFixed(0);
+}
+
+// tooltip en las gráficas
+const tooltip = document.getElementById("tooltip");
+for (const [id] of GRAFICAS) {
+  const cv = document.getElementById(id);
+  cv.addEventListener("mousemove", e => {
+    const d = cv._datos; if (!d || M.historia.length < 2) return;
+    const r = cv.getBoundingClientRect(), x = e.clientX - r.left;
+    const h = M.historia, frac = clamp((x - d.ml) / (d.ancho - d.ml - d.mr), 0, 1);
+    const p = h[Math.round(frac * (h.length - 1))];
+    tooltip.innerHTML = `turno ${p.t}<br>` + d.series.map(s => `${s.nombre}: ${(+p[s.clave]).toFixed(2)}`).join("<br>");
+    const cont = tooltip.parentElement.getBoundingClientRect();
+    tooltip.style.left = (e.clientX - cont.left + 12) + "px"; tooltip.style.top = (e.clientY - cont.top - 10) + "px"; tooltip.style.display = "block";
+  });
+  cv.addEventListener("mouseleave", () => tooltip.style.display = "none");
+}
+
+// ============================================================ bucle
+function cuadro() {
+  if (!corriendo) return;
+  const rapido = $("chkRapido").checked, n = rapido ? 60 : +$("vel").value;
+  for (let i = 0; i < n; i++) turno();
+  dibujarTodo(rapido);
+  requestAnimationFrame(cuadro);
+}
+
+// ============================================================ guardar / cargar
+function textoGuardado() {
+  let t = "# SIMULADOR DE ECONOMIA - generado por economia.html\n\n[CONFIG]\n";
+  for (const k in CFG) t += `${k}=${CFG[k]}\n`;
+  t += `turno=${M.turno}\nnacimientos=${M.nacimientos}\nmuertes_hambre=${M.muertesHambre}\nmuertes_vejez=${M.muertesVejez}\nataques_ok=${M.ataquesOk}\nataques_intentos=${M.ataquesIntentos}\n`;
+  t += "\n[ESTADISTICAS]\n# turno;poblacion;produccion;ataques;gini;ahorro;herramienta;defensa;generacion\n";
+  for (const h of M.historia) t += `${h.t};${h.pob};${h.prod.toFixed(2)};${h.ataq.toFixed(3)};${h.gini.toFixed(3)};${h.ahorro.toFixed(2)};${h.herr.toFixed(2)};${h.def.toFixed(2)};${h.gen.toFixed(1)}\n`;
+  t += "\n[MEJORES_CEREBROS]\n# hijos;edad;generacion;pesos (los agentes vivos con mas hijos y el salon de la fama)\n";
+  const vivos = M.agentes.slice().sort((a, b) => b.hijos - a.hijos || b.edad - a.edad).slice(0, 8).map(a => ({ hijos: a.hijos, edad: a.edad, gen: a.gen, pesos: a.cerebro.pesos }));
+  for (const s of vivos.concat(M.salon)) t += `${s.hijos};${s.edad};${s.gen};${Array.from(s.pesos, x => x.toFixed(4)).join(" ")}\n`;
+  return t;
+}
+
+function cargarTexto(txt) {
+  let sec = null; const cerebros = [], historia = [], extra = {};
+  for (let linea of txt.split(/\r?\n/)) {
+    linea = linea.trim(); if (!linea || linea.startsWith("#")) continue;
+    if (/^\[.*\]$/.test(linea)) { sec = linea.slice(1, -1); continue; }
+    if (sec === "CONFIG") { const i = linea.indexOf("="), k = linea.slice(0, i), v = +linea.slice(i + 1); if (k in CFG) CFG[k] = v; else extra[k] = v; }
+    else if (sec === "ESTADISTICAS") { const p = linea.split(";").map(Number); historia.push({ t: p[0], pob: p[1], prod: p[2], ataq: p[3], gini: p[4], ahorro: p[5], herr: p[6], def: p[7], gen: p[8] || 0 }); }
+    else if (sec === "MEJORES_CEREBROS") { const p = linea.split(";"); const pesos = Float64Array.from(p[3].split(/\s+/).map(Number)); if (pesos.length === N_PESOS) cerebros.push(new Cerebro(pesos)); }
+  }
+  actualizarPerillas();
+  nuevoMundo(cerebros);
+  M.historia = historia; M.turno = extra.turno || 0;
+  registrar(`Cargado: ${cerebros.length} cerebros, ${historia.length} muestras. La población nueva nace de esos cerebros con mutaciones.`);
+}
+
+// ============================================================ interfaz
+const $ = id => document.getElementById(id);
+function registrar(txt) { const l = $("log"); l.textContent += txt + "\n"; l.scrollTop = l.scrollHeight; }
+
+function construirPerillas() {
+  const cont = $("perillas");
+  for (const [k, nombre, min, max, paso, fmt] of PERILLAS) {
+    const fila = document.createElement("div"); fila.className = "perilla";
+    fila.innerHTML = `<span>${nombre}</span><input type="range" id="p_${k}" min="${min}" max="${max}" step="${paso}"><b id="pv_${k}"></b>`;
+    cont.appendChild(fila);
+    const inp = fila.querySelector("input");
+    inp.oninput = () => { CFG[k] = +inp.value; $("pv_" + k).textContent = fmt(CFG[k]); };
+  }
+  actualizarPerillas();
+}
+function actualizarPerillas() {
+  for (const [k, , , , , fmt] of PERILLAS) { $("p_" + k).value = CFG[k]; $("pv_" + k).textContent = fmt(CFG[k]); }
+}
+
+$("btnCorrer").onclick = () => { corriendo = !corriendo; $("btnCorrer").textContent = corriendo ? "⏸ Pausar" : "▶ Correr"; if (corriendo) requestAnimationFrame(cuadro); };
+$("btnReiniciar").onclick = () => { nuevoMundo(); $("log").textContent = ""; registrar("Mundo nuevo con cerebros aleatorios."); dibujarTodo(); };
+$("vel").oninput = () => $("velTxt").textContent = $("vel").value;
+$("btnDescargar").onclick = () => {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([textoGuardado()], { type: "text/plain" })); a.download = "economia.txt"; a.click(); URL.revokeObjectURL(a.href);
+};
+$("btnCargar").onclick = () => $("archivo").click();
+$("archivo").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { corriendo = false; $("btnCorrer").textContent = "▶ Correr"; cargarTexto(t); dibujarTodo(); }); e.target.value = ""; };
+window.addEventListener("resize", () => dibujarTodo(true));
+
+construirPerillas();
+nuevoMundo();
+registrar("Pulsa ▶ Correr. Al principio los agentes actúan al azar y muchos mueren; con las generaciones aparecen conductas.");
+dibujarTodo();
+</script>
+</body>
+</html>

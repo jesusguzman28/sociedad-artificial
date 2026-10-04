@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Del anarcocapitalismo al comunismo en seis geografías</title>
+<meta name="description" content="Paper interactivo: instituciones, incentivos y colapso demográfico en una sociedad artificial que aprende. Simulador, datos y resultados reproducibles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --bg:#f4f5f7; --surface:#ffffff; --surface-2:#f7f8fa; --ink:#14181f; --ink-2:#4f5866; --ink-3:#8690a0; --line:#dde2ea; --accent:#1f5f8b; --accent-ink:#fff;
+          --A:#2a78d6; --B:#eb6834; --C:#1baf7a; --D:#eda100; --E:#4a3aa7; --F:#e34948; --good:#1b8f5a; --bad:#c9403f;
+          --font:"IBM Plex Sans","Segoe UI",system-ui,sans-serif; --serif:"IBM Plex Serif",Georgia,serif; --mono:"IBM Plex Mono",Consolas,monospace; color-scheme:light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f1216; --surface:#171b21; --surface-2:#1d222a; --ink:#eef1f5; --ink-2:#aab3bf; --ink-3:#737d8a; --line:#2a313a; --accent:#5aa1d6; --accent-ink:#0f1216; --A:#3987e5; --B:#ef7b4f; --C:#2fc48d; --D:#f0b429; --E:#9085e9; --F:#ef6b6a; color-scheme:dark; } }
+  :root[data-theme="dark"] { --bg:#0f1216; --surface:#171b21; --surface-2:#1d222a; --ink:#eef1f5; --ink-2:#aab3bf; --ink-3:#737d8a; --line:#2a313a; --accent:#5aa1d6; --accent-ink:#0f1216; --A:#3987e5; --B:#ef7b4f; --C:#2fc48d; --D:#f0b429; --E:#9085e9; --F:#ef6b6a; color-scheme:dark; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; }
+  body { background:var(--bg); color:var(--ink); font:15px/1.6 var(--font); -webkit-font-smoothing:antialiased; }
+  a { color:var(--accent); }
+  h1, h2, h3 { font-family:var(--serif); font-weight:600; text-wrap:balance; margin:0; }
+  .nav { position:sticky; top:0; z-index:10; background:var(--surface); border-bottom:1px solid var(--line); padding:10px 24px; display:flex; gap:18px; align-items:center; flex-wrap:wrap; font-size:13px; }
+  .nav a { color:var(--ink-2); text-decoration:none; } .nav a:hover { color:var(--ink); }
+  .nav .marca { font-weight:600; color:var(--ink); margin-right:auto; }
+  .nav button { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; }
+  .contenido { max-width: 980px; margin:0 auto; padding:28px 24px 60px; }
+  .portada { padding:30px 0 10px; border-bottom:1px solid var(--line); margin-bottom:28px; }
+  .portada h1 { font-size:34px; line-height:1.2; }
+  .portada .sub { font-size:19px; color:var(--ink-2); margin-top:8px; font-family:var(--serif); }
+  .autor { margin-top:18px; color:var(--ink-2); font-size:14px; }
+  .autor b { color:var(--ink); font-weight:500; }
+  .acciones { display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; }
+  .boton { display:inline-block; padding:9px 14px; border-radius:6px; border:1px solid var(--line); background:var(--surface); color:var(--ink); text-decoration:none; font-size:14px; font-weight:500; }
+  .boton.primario { background:var(--ink); color:var(--surface); border-color:var(--ink); }
+  section { margin: 34px 0; }
+  section > h2 { font-size:24px; margin-bottom:10px; }
+  section > h3 { font-size:17px; margin:22px 0 8px; }
+  p { margin:0 0 12px; max-width:72ch; }
+  .destacado { background:var(--surface); border-left:3px solid var(--accent); padding:12px 16px; border-radius:6px; margin:14px 0; }
+  .tarjeta { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:16px 18px; margin:14px 0; }
+  .controles { display:flex; gap:12px; flex-wrap:wrap; align-items:center; font-size:13px; color:var(--ink-2); margin-bottom:10px; }
+  select, input[type=checkbox] { font:inherit; } select { padding:5px 8px; border:1px solid var(--line); border-radius:6px; background:var(--surface-2); color:var(--ink); }
+  canvas.g { width:100%; height:300px; display:block; }
+  .nota { font-size:12.5px; color:var(--ink-3); margin-top:6px; }
+  .cifras { display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin:14px 0; }
+  .cifra { background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .cifra b { display:block; font-size:24px; font-family:var(--mono); font-weight:500; line-height:1.2; }
+  .cifra span { font-size:12px; color:var(--ink-3); text-transform:uppercase; letter-spacing:.06em; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; font-variant-numeric:tabular-nums; }
+  th, td { padding:7px 10px; border-bottom:1px solid var(--line); text-align:right; vertical-align:top; }
+  th { font-size:11.5px; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-3); font-weight:500; }
+  td:first-child, th:first-child { text-align:left; }
+  .ok { color:var(--good); font-weight:600; }
+  .leyenda { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:12.5px; color:var(--ink-2); margin:6px 0; }
+  .leyenda label { display:inline-flex; align-items:center; gap:6px; cursor:pointer; }
+  .sw { display:inline-block; width:11px; height:11px; border-radius:2px; }
+  .enlaces-sim { display:grid; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr)); gap:10px; }
+  .enlaces-sim a { display:block; padding:12px 14px; border:1px solid var(--line); border-radius:8px; background:var(--surface); text-decoration:none; color:var(--ink); }
+  .enlaces-sim a small { display:block; color:var(--ink-3); font-size:12px; margin-top:3px; }
+  .ancho { overflow-x:auto; }
+  footer { border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--ink-3); font-size:13px; }
+  img.fig { max-width:100%; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  @media (max-width:700px) { .portada h1 { font-size:26px; } canvas.g { height:240px; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <span class="marca">Sociedad artificial que aprende</span>
+  <a href="#resumen">Resumen</a><a href="#resultados">Resultados</a><a href="#geografia">Geografía</a><a href="#modelo">Modelo</a><a href="#validacion">Validación</a><a href="#simulador">Simulador</a><a href="#descargas">Descargas</a>
+  <button id="btnTema" title="Tema claro u oscuro">◐</button>
+</nav>
+
+<main class="contenido">
+  <header class="portada">
+    <h1>Del anarcocapitalismo al comunismo en seis geografías</h1>
+    <div class="sub">Instituciones, incentivos y colapso demográfico en una sociedad artificial que aprende</div>
+    <div class="autor"><b>Pedro Jesús Guzmán Ramos</b> · Docente, Instituto de Educación Superior Tecnológico Público "Sara Sara", Ayacucho, Perú · <a href="https://orcid.org/0009-0005-5673-7452">ORCID 0009-0005-5673-7452</a> · pedroguzman@iestpsarasara.edu.pe</div>
+    <div class="acciones">
+      <a class="boton primario" href="manuscrito.pdf">Leer el manuscrito (PDF)</a>
+      <a class="boton" href="mundos.html">Abrir el simulador</a>
+      <a class="boton" href="#descargas">Datos y código</a>
+    </div>
+  </header>
+
+  <section id="resumen">
+    <h2>Resumen</h2>
+    <p>Se presenta un modelo basado en agentes en el que la biología (hambre, sed, reproducción, mortalidad por edad) y un conjunto mínimo de instintos son fijos, mientras que las decisiones económicas (recolectar, sembrar, regar, invertir, atacar, comerciar, construir) las toma una red neuronal heredada y mutada: la conducta económica evoluciona por selección natural dentro de la simulación. Sobre esa base se definen seis sistemas económicos como combinaciones explícitas de cuatro reglas institucionales: impuesto y frecuencia de reparto, forma del reparto (por igual o según necesidad), propiedad de los cultivos y facilidad para robar.</p>
+    <div class="cifras" id="cifras"></div>
+    <div class="destacado"><b>Dos hallazgos.</b> Primero, existe un umbral de redistribución mensual a partir del cual la población colapsa, y el mecanismo no es de esfuerzo sino distributivo: la producción por persona no cambia, pero el reparto comprime la distribución de reservas hasta que casi ninguna pareja reúne lo que cuesta criar. Segundo, la socialdemocracia (propiedad protegida, impuesto alto repartido según necesidad) sostiene una producción algo menor que la del anarcocapitalismo con la mitad de desigualdad, menos violencia y el triple de agricultura. Ambos resultados se mantienen en seis geografías distintas.</div>
+  </section>
+
+  <section id="resultados">
+    <h2>Resultados interactivos</h2>
+    <h3>Experimento 1: seis sistemas económicos, 10 réplicas, 200 años</h3>
+    <div class="tarjeta">
+      <div class="controles"><label>Indicador <select id="m1"></select></label><span>Barras: media de las réplicas; bigotes: intervalo de confianza del 95 %.</span></div>
+      <canvas class="g" id="g1"></canvas>
+      <div class="nota" id="n1"></div>
+    </div>
+    <h3>Dinámica temporal</h3>
+    <div class="tarjeta">
+      <div class="controles"><label>Indicador <select id="m1s"><option value="pob">Población</option><option value="prod">Producción por mes</option><option value="gini">Gini</option><option value="ataq">Ataques por mes</option></select></label></div>
+      <div class="leyenda" id="ley1s"></div>
+      <canvas class="g" id="g1s"></canvas>
+      <div class="nota">Media de las réplicas de cada sistema a lo largo de 200 años.</div>
+    </div>
+    <h3>Experimento 2: el umbral de redistribución</h3>
+    <div class="tarjeta">
+      <div class="controles"><label>Indicador <select id="m2"></select></label><span>Impuesto mensual con reparto por igual, 8 réplicas, 150 años.</span></div>
+      <canvas class="g" id="g2"></canvas>
+      <div class="nota" id="n2"></div>
+    </div>
+    <h3>El mecanismo: la distribución de reservas</h3>
+    <div class="tarjeta">
+      <div class="leyenda"><span><i class="sw" style="background:var(--A)"></i>sin impuesto</span><span><i class="sw" style="background:var(--D)"></i>impuesto mensual 20 %</span><span><i class="sw" style="background:var(--F)"></i>reparto total mensual</span></div>
+      <canvas class="g" id="g4"></canvas>
+      <div class="nota" id="n4">Reserva de comida por persona al año 150 (tres réplicas acumuladas). La línea discontinua marca los 20 que cuesta criar un hijo.</div>
+    </div>
+  </section>
+
+  <section id="geografia">
+    <h2>Experimento 3: ¿dependen las conclusiones del mapa?</h2>
+    <p>Las mismas seis instituciones en seis geografías (6 réplicas por celda, 150 años): cuatro oasis, un río, un lago central, dos oasis lejanos, una costa y muchos charcos pequeños.</p>
+    <div class="tarjeta">
+      <div class="controles"><label>Indicador <select id="m3"></select></label><span>Media por mapa y sistema.</span></div>
+      <canvas class="g" id="g3" style="height:340px"></canvas>
+    </div>
+    <div class="tarjeta">
+      <div class="controles"><label>Mapa <select id="mapa3"></select></label><span>Población a lo largo de 150 años en ese mapa, una línea por sistema.</span></div>
+      <canvas class="g" id="g3s"></canvas>
+    </div>
+    <div class="tarjeta">
+      <div class="controles"><span>Geografía y población: un punto por mapa (promedio de los seis sistemas).</span></div>
+      <canvas class="g" id="g3g"></canvas>
+      <div class="nota" id="n3g"></div>
+    </div>
+    <div class="ancho"><table id="tgeo"></table></div>
+  </section>
+
+  <section id="modelo">
+    <h2>El modelo en una página</h2>
+    <p><b>Espacio y tiempo.</b> Rejilla de 48 × 30 casillas, un turno es un mes, una persona por casilla. Tierra con fertilidad, agua y paredes.</p>
+    <p><b>Biología fija.</b> Energía y sed que se gastan cada mes; se come de la reserva y se bebe a 2 casillas del agua; embarazo de 9 meses, descanso de un año, fértiles de los 16 a los 45; riesgo de morir que sube con la edad hasta los 80.</p>
+    <p><b>Instintos fijos.</b> Ir al agua con sed, asegurar una reserva mínima de comida, buscar pareja, tener hogar (hasta 5 personas por casa; independencia al llegar a adulto; migración si no hay sitio).</p>
+    <p><b>Economía aprendida.</b> Una red neuronal (26 entradas, 10 ocultas, 12 acciones) decide recolectar, sembrar, regar, invertir en herramienta o defensa, atacar, comerciar, construir o vagar. Los pesos se heredan de ambos padres con mutación: lo que una población hace con sus recursos es resultado de la selección bajo las reglas que se le imponen.</p>
+    <p><b>Instituciones.</b> Impuesto y frecuencia de reparto, reparto por igual o según necesidad, propiedad privada de cultivos (cosechar lo ajeno es un robo que el dueño repele con su defensa) y facilidad para robar. Todo lo demás es idéntico entre sistemas.</p>
+    <div class="ancho"><table><tr><th>Sistema</th><th>Impuesto (frecuencia)</th><th>Reparto</th><th>Propiedad de cultivos</th><th>Facilidad para robar</th></tr>
+      <tr><td>Anarquía primitiva</td><td>0</td><td>–</td><td>no</td><td>1,5</td></tr><tr><td>Anarcocapitalismo</td><td>0</td><td>–</td><td>sí</td><td>0,7</td></tr>
+      <tr><td>Capitalismo con Estado mínimo</td><td>10 % (12 meses)</td><td>por igual</td><td>sí</td><td>0,2</td></tr><tr><td>Socialdemocracia</td><td>35 % (3 meses)</td><td>según necesidad</td><td>sí</td><td>0,2</td></tr>
+      <tr><td>Socialismo (planificación parcial)</td><td>60 % (1 mes)</td><td>según necesidad</td><td>no</td><td>0</td></tr><tr><td>Comunismo</td><td>100 % (1 mes)</td><td>por igual</td><td>no</td><td>0</td></tr></table></div>
+    <p class="nota">La descripción completa (protocolo ODD) está en el manuscrito y en la pestaña "Modelo y leyenda" del simulador.</p>
+  </section>
+
+  <section id="validacion">
+    <h2>Validación por hechos estilizados</h2>
+    <p>Antes de los experimentos se comprobó que el modelo reproduce seis regularidades de la literatura. Es una validación cualitativa, no una calibración con datos reales. Puedes repetirla en la pestaña "Validación" del simulador.</p>
+    <div class="ancho"><table id="tval"></table></div>
+  </section>
+
+  <section id="simulador">
+    <h2>Reproduce los experimentos en el simulador</h2>
+    <p>Cada enlace abre el simulador con dos mundos ya configurados y la misma semilla que usan las réplicas del paper. Pulsa ▶ Correr ambos y usa el modo rápido.</p>
+    <div class="enlaces-sim" id="enlaces"></div>
+    <p class="nota">El simulador es un solo archivo HTML sin dependencias; funciona sin conexión y guarda cada mundo en un archivo .txt reproducible.</p>
+  </section>
+
+  <section id="descargas">
+    <h2>Datos y código</h2>
+    <div class="enlaces-sim">
+      <a href="manuscrito.pdf">Manuscrito (PDF)<small>Versión completa con métodos, tablas y referencias</small></a>
+      <a href="mundos.html">Simulador<small>mundos.html, un solo archivo</small></a>
+      <a href="datos/replicas.csv">Experimentos 1 y 2 (CSV)<small>108 réplicas, valores finales y totales</small></a>
+      <a href="datos/mapas.csv">Experimento 3 (CSV)<small>216 corridas: 6 mapas × 6 sistemas × 6 réplicas</small></a>
+    </div>
+    <p class="nota" style="margin-top:12px">Semillas: 2024 + 7919·r para la réplica r. Con la misma semilla y configuración el simulador reproduce exactamente la misma historia.</p>
+  </section>
+
+  <footer>Pedro Jesús Guzmán Ramos · <span id="fecha"></span> · Sitio generado desde los datos del manuscrito.</footer>
+</main>
+
+<script src="datos.js"></script>
+<script>
+const D = window.DATOS, $ = id => document.getElementById(id);
+const COL = ["--A", "--B", "--C", "--D", "--E", "--F"].map(v => () => getComputedStyle(document.documentElement).getPropertyValue(v).trim());
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f = (x, d) => x == null || isNaN(x) ? "–" : (+x).toFixed(d).replace(".", ",");
+const fp = p => p == null ? "–" : p < 0.001 ? "p < 0,001" : "p = " + p.toFixed(3).replace(".", ",");
+const SIS = D.ordenSistemas, MAP = D.ordenMapas, nomS = s => D.sistemas[s], nomM = m => D.mapas[m];
+const cortoS = { 3: "Anarquía", 1: "Anarcocap.", 4: "Estado mín.", 5: "Socialdem.", 6: "Socialismo", 2: "Comunismo" };
+$("fecha").textContent = D.fecha;
+
+// ---- utilidades de dibujo
+function lienzo(cv) { const r = cv.getBoundingClientRect(), k = devicePixelRatio || 1; cv.width = r.width * k; cv.height = r.height * k; const ctx = cv.getContext("2d"); ctx.setTransform(k, 0, 0, k, 0, 0); ctx.clearRect(0, 0, r.width, r.height); return [ctx, r.width, r.height]; }
+function ejes(ctx, W, H, ml, mr, mt, mb, maxV, fmt, x0lab, x1lab) {
+  ctx.strokeStyle = css("--line"); ctx.lineWidth = 1; ctx.fillStyle = css("--ink-3"); ctx.font = "11px " + css("--mono"); ctx.textAlign = "right"; ctx.textBaseline = "middle";
+  for (const q of [0, 0.25, 0.5, 0.75, 1]) { const y = mt + (1 - q) * (H - mt - mb); ctx.beginPath(); ctx.moveTo(ml, y); ctx.lineTo(W - mr, y); ctx.stroke(); ctx.fillText(fmt(maxV * q), ml - 6, y); }
+  ctx.textAlign = "center"; ctx.textBaseline = "top"; if (x0lab) ctx.fillText(x0lab, ml + 14, H - mb + 6); if (x1lab) ctx.fillText(x1lab, W - mr - 20, H - mb + 6);
+}
+function barras(cv, etiquetas, medias, ics, colores, fmt) {
+  const [ctx, W, H] = lienzo(cv), ml = 54, mr = 12, mt = 18, mb = 44, maxV = Math.max(1e-9, ...medias.map((m, i) => m + (ics[i] || 0))) * 1.08;
+  ejes(ctx, W, H, ml, mr, mt, mb, maxV, fmt); const paso = (W - ml - mr) / medias.length, Y = v => mt + (1 - v / maxV) * (H - mt - mb);
+  medias.forEach((m, i) => { const x = ml + paso * (i + 0.5), w = paso * 0.56; ctx.fillStyle = colores[i]; ctx.beginPath(); ctx.roundRect(x - w / 2, Y(m), w, H - mb - Y(m), [4, 4, 0, 0]); ctx.fill();
+    if (ics[i]) { ctx.strokeStyle = css("--ink"); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x, Y(m + ics[i])); ctx.lineTo(x, Y(Math.max(0, m - ics[i]))); ctx.moveTo(x - 6, Y(m + ics[i])); ctx.lineTo(x + 6, Y(m + ics[i])); ctx.moveTo(x - 6, Y(Math.max(0, m - ics[i]))); ctx.lineTo(x + 6, Y(Math.max(0, m - ics[i]))); ctx.stroke(); }
+    ctx.fillStyle = css("--ink"); ctx.font = "12px " + css("--mono"); ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(fmt(m), x, Y(m + (ics[i] || 0)) - 4);
+    ctx.fillStyle = css("--ink-2"); ctx.font = "11.5px " + css("--font"); ctx.textBaseline = "top"; ctx.fillText(etiquetas[i], x, H - mb + 8); });
+}
+function lineas(cv, series, fmt, xlab) {   // series: [{x:[], y:[], color, label, ic:[]}]
+  const [ctx, W, H] = lienzo(cv), ml = 54, mr = 12, mt = 18, mb = 34;
+  let maxV = 0, maxX = 0, minX = Infinity; for (const s of series) { s.y.forEach((v, i) => maxV = Math.max(maxV, v + (s.ic ? s.ic[i] : 0))); maxX = Math.max(maxX, ...s.x); minX = Math.min(minX, ...s.x); }
+  maxV = Math.max(1e-9, maxV) * 1.06; ejes(ctx, W, H, ml, mr, mt, mb, maxV, fmt, xlab(minX), xlab(maxX));
+  const X = x => ml + (x - minX) / Math.max(1e-9, maxX - minX) * (W - ml - mr), Y = v => mt + (1 - v / maxV) * (H - mt - mb);
+  for (const s of series) {
+    if (s.ic) { ctx.fillStyle = s.color + "33"; ctx.beginPath(); s.x.forEach((x, i) => i ? ctx.lineTo(X(x), Y(s.y[i] + s.ic[i])) : ctx.moveTo(X(x), Y(s.y[i] + s.ic[i]))); for (let i = s.x.length - 1; i >= 0; i--) ctx.lineTo(X(s.x[i]), Y(Math.max(0, s.y[i] - s.ic[i]))); ctx.closePath(); ctx.fill(); }
+    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.lineJoin = "round"; ctx.beginPath(); s.x.forEach((x, i) => i ? ctx.lineTo(X(x), Y(s.y[i])) : ctx.moveTo(X(x), Y(s.y[i]))); ctx.stroke();
+    if (s.puntos) { ctx.fillStyle = s.color; s.x.forEach((x, i) => { ctx.beginPath(); ctx.arc(X(x), Y(s.y[i]), 4, 0, 7); ctx.fill(); }); }
+    const u = s.x.length - 1; ctx.fillStyle = s.color; ctx.font = "11px " + css("--font"); ctx.textAlign = "right"; ctx.textBaseline = "bottom"; if (s.label) ctx.fillText(s.label, X(s.x[u]) - 2, Y(s.y[u]) - 3);
+  }
+}
+function mapaCalor(cv, M, filas, cols, fmt) {
+  const [ctx, W, H] = lienzo(cv), ml = 120, mt = 8, mb = 70, cw = (W - ml - 10) / cols.length, ch = (H - mt - mb) / filas.length, maxV = Math.max(1e-9, ...M.flat());
+  const base = css("--A"); const hex = base.replace("#", ""); const [r0, g0, b0] = [0, 2, 4].map(i => parseInt(hex.substr(i, 2), 16));
+  M.forEach((fila, i) => fila.forEach((v, j) => { const t = v / maxV; ctx.fillStyle = `rgba(${r0},${g0},${b0},${0.08 + 0.85 * t})`; ctx.fillRect(ml + j * cw, mt + i * ch, cw - 2, ch - 2);
+    ctx.fillStyle = t > 0.55 ? "#fff" : css("--ink"); ctx.font = "12px " + css("--mono"); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(fmt(v), ml + j * cw + cw / 2, mt + i * ch + ch / 2); }));
+  ctx.fillStyle = css("--ink-2"); ctx.font = "12px " + css("--font"); ctx.textAlign = "right"; ctx.textBaseline = "middle"; filas.forEach((n, i) => ctx.fillText(n, ml - 8, mt + i * ch + ch / 2));
+  ctx.textAlign = "right"; ctx.textBaseline = "top"; cols.forEach((n, j) => { ctx.save(); ctx.translate(ml + j * cw + cw / 2, mt + filas.length * ch + 6); ctx.rotate(-0.5); ctx.textAlign = "right"; ctx.fillText(n, 0, 0); ctx.restore(); });
+}
+function histogramas(cv, claves, colores) {
+  const [ctx, W, H] = lienzo(cv), ml = 54, mr = 12, mt = 18, mb = 34, n = claves.length, anchoPanel = (W - ml - mr) / n;
+  claves.forEach((k, p) => {
+    const h = D.reservas[k], maxC = Math.max(1, ...h.conteos) * 1.1, x0 = ml + p * anchoPanel, bw = (anchoPanel - 16) / h.conteos.length, Y = v => mt + (1 - v / maxC) * (H - mt - mb);
+    ctx.fillStyle = colores[p]; h.conteos.forEach((c, i) => ctx.fillRect(x0 + i * bw, Y(c), bw - 1, H - mb - Y(c)));
+    const xv = v => x0 + v / 40 * (anchoPanel - 16); ctx.strokeStyle = css("--ink"); ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(xv(20), mt); ctx.lineTo(xv(20), H - mb); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = css("--ink-2"); ctx.font = "11.5px " + css("--font"); ctx.textAlign = "left"; ctx.textBaseline = "top"; ctx.fillText(`n = ${h.n} · media ${f(h.media, 1)} · ${f(h.sobre20, 0)} % por encima de 20`, x0, mt - 14 + 2);
+    ctx.textAlign = "center"; ctx.fillStyle = css("--ink-3"); ctx.font = "11px " + css("--mono"); [0, 20, 40].forEach(v => ctx.fillText(v, xv(v), H - mb + 6));
+  });
+}
+
+// ---- cifras de portada
+const e1 = D.exp1; const c = [["Población con anarcocapitalismo", f(e1[1].metricas.pob.media, 0)], ["Población con comunismo", f(e1[2].metricas.pob.media, 0)], ["Gini: socialdemocracia / anarcocapitalismo", f(e1[5].metricas.gini.media, 2) + " / " + f(e1[1].metricas.gini.media, 2)], ["Corridas simuladas", "324"]];
+$("cifras").innerHTML = c.map(([t, v]) => `<div class="cifra"><b>${v}</b><span>${t}</span></div>`).join("");
+
+// ---- experimento 1
+const metricas = D.metricas; const sel = (id, lista, def) => { const s = $(id); s.innerHTML = lista.map(([k, n]) => `<option value="${k}">${n}</option>`).join(""); if (def) s.value = def; return s; };
+sel("m1", metricas.map(m => [m[0], m[1]]), "pob"); sel("m2", metricas.map(m => [m[0], m[1]]), "pob"); sel("m3", metricas.filter(m => e1[3].metricas[m[0]] && D.exp3["0_3"].metricas[m[0]]).map(m => [m[0], m[1]]), "pob");
+sel("mapa3", MAP.map(m => [m, nomM(m)]), "1");
+function dibujar1() {
+  const k = $("m1").value, dec = metricas.find(m => m[0] === k)[2];
+  barras($("g1"), SIS.map(s => cortoS[s]), SIS.map(s => e1[s].metricas[k].media), SIS.map(s => e1[s].metricas[k].ic), SIS.map((s, i) => COL[i]()), v => f(v, dec));
+  $("n1").innerHTML = "Frente al anarcocapitalismo (t de Welch, d de Cohen): " + SIS.filter(s => s !== 1).map(s => { const t = e1[s].vsAncap[k]; return `<b>${cortoS[s]}</b> ${fp(t.p)}, d = ${f(t.d, 2)}`; }).join(" · ") + (SIS.some(s => e1[s].extintos) ? " · Réplicas extintas: " + SIS.filter(s => e1[s].extintos).map(s => `${cortoS[s]} ${e1[s].extintos}`).join(", ") : "");
+}
+const activos = new Set(SIS);
+$("ley1s").innerHTML = SIS.map((s, i) => `<label><input type="checkbox" checked data-s="${s}"><i class="sw" style="background:var(${["--A", "--B", "--C", "--D", "--E", "--F"][i]})"></i>${nomS(s)}</label>`).join("");
+for (const cb of $("ley1s").querySelectorAll("input")) cb.onchange = () => { cb.checked ? activos.add(+cb.dataset.s) : activos.delete(+cb.dataset.s); dibujar1s(); };
+function dibujar1s() { const k = $("m1s").value, dec = k === "gini" ? 2 : k === "ataq" ? 1 : 0; lineas($("g1s"), SIS.filter(s => activos.has(s)).map((s, i) => ({ x: D.series1[s].t, y: D.series1[s][k], color: COL[SIS.indexOf(s)](), label: cortoS[s] })), v => f(v, dec), x => "año " + f(x, 0)); }
+function dibujar2() {
+  const k = $("m2").value, dec = metricas.find(m => m[0] === k)[2];
+  lineas($("g2"), [{ x: D.exp2.map(e => e.impuesto * 100), y: D.exp2.map(e => e.metricas[k].media), ic: D.exp2.map(e => e.metricas[k].ic), color: COL[0](), puntos: true }], v => f(v, dec), x => "impuesto " + f(x, 0) + " %");
+  const a = D.exp2[0].metricas, b = D.exp2[D.exp2.length - 1].metricas;
+  $("n2").textContent = `Sin impuesto: ${f(a[k].media, dec)} ± ${f(a[k].ic, dec)}. Con reparto total mensual: ${f(b[k].media, dec)} ± ${f(b[k].ic, dec)}. Compara "Población" (cae de ${f(a.pob.media, 0)} a ${f(b.pob.media, 0)}) con "Producción por persona" (${f(a.prodPc.media, 2)} frente a ${f(b.prodPc.media, 2)}) y "Reserva media" (${f(a.ahorro.media, 1)} frente a ${f(b.ahorro.media, 1)}): lo que cambia es la dispersión, no el esfuerzo.`;
+}
+function dibujar4() { histogramas($("g4"), ["sin_impuesto", "impuesto_20", "reparto_total"], [COL[0](), COL[3](), COL[5]()]); }
+function dibujar3() { const k = $("m3").value, dec = metricas.find(m => m[0] === k)[2]; mapaCalor($("g3"), MAP.map(m => SIS.map(s => D.exp3[`${m}_${s}`].metricas[k].media)), MAP.map(nomM), SIS.map(nomS), v => f(v, dec)); }
+function dibujar3s() { const m = $("mapa3").value; lineas($("g3s"), SIS.map((s, i) => { const y = D.series3[`${m}_${s}`]; return { x: y.map((v, j) => j * 5), y, color: COL[i](), label: cortoS[s] }; }), v => f(v, 0), x => "año " + f(x, 0)); }
+function dibujar3g() {
+  const pts = MAP.map(m => D.geo[m]); const [ctx, W, H] = lienzo($("g3g")), ml = 54, mr = 12, mt = 18, mb = 34;
+  const maxX = Math.max(...pts.map(p => p.distMediaAgua)) * 1.1, maxY = Math.max(...pts.map(p => p.pob)) * 1.15; ejes(ctx, W, H, ml, mr, mt, mb, maxY, v => f(v, 0), "cerca del agua", "lejos del agua");
+  const X = x => ml + x / maxX * (W - ml - mr), Y = v => mt + (1 - v / maxY) * (H - mt - mb);
+  pts.forEach((p, i) => { ctx.fillStyle = COL[i](); ctx.beginPath(); ctx.arc(X(p.distMediaAgua), Y(p.pob), 6, 0, 7); ctx.fill(); ctx.fillStyle = css("--ink"); ctx.font = "12px " + css("--font"); ctx.textAlign = "left"; ctx.textBaseline = "bottom"; ctx.fillText(`${p.nombre} (${f(p.distMediaAgua, 1)} casillas)`, X(p.distMediaAgua) + 8, Y(p.pob) - 4); });
+  $("n3g").textContent = "Eje horizontal: distancia media de la tierra al agua. Eje vertical: población. Lo que importa no es cuánta agua hay sino cómo está repartida: la costa tiene mucha agua, pero toda en un borde.";
+  $("tgeo").innerHTML = "<tr><th>Mapa</th><th>Celdas de agua</th><th>Celdas cultivables</th><th>Distancia media al agua</th><th>Población</th><th>Producción</th><th>Gini</th><th>Ataques</th><th>Intercambios/mes</th><th>Ciudades</th><th>Migraciones</th></tr>" + MAP.map(m => { const g = D.geo[m]; return `<tr><td>${g.nombre}</td><td>${f(g.celdasAgua, 0)}</td><td>${f(g.celdasFertiles, 0)}</td><td>${f(g.distMediaAgua, 1)}</td><td>${f(g.pob, 0)}</td><td>${f(g.prod, 0)}</td><td>${f(g.gini, 2)}</td><td>${f(g.ataq, 1)}</td><td>${f(g.intercambios, 1)}</td><td>${f(g.ciudades, 1)}</td><td>${f(g.migraciones, 0)}</td></tr>`; }).join("");
+}
+$("tval").innerHTML = "<tr><th>Regularidad</th><th>Referencia</th><th>Resultado en el modelo</th><th>Estado</th></tr>" + D.validacion.map(v => `<tr><td>${v[0]}</td><td>${v[1]}</td><td>${v[2]}</td><td class="ok">${v[3] ? "✓ reproduce" : "✗"}</td></tr>`).join("");
+const enlaces = [["Anarcocapitalismo frente a comunismo", "sistemaA=1&sistemaB=2&mapa=0&semilla=2024", "4 oasis, semilla de la réplica 0"], ["Socialdemocracia frente a anarcocapitalismo", "sistemaA=5&sistemaB=1&mapa=0&semilla=2024", "4 oasis"], ["Anarquía primitiva frente a Estado mínimo", "sistemaA=3&sistemaB=4&mapa=0&semilla=2024", "4 oasis"],
+  ["Río frente a costa, mismo sistema", "sistemaA=1&sistemaB=1&mapa=1&semilla=2024", "cambia el mapa de B a costa en su selector"], ["Socialismo parcial frente a comunismo", "sistemaA=6&sistemaB=2&mapa=5&semilla=2024", "muchos charcos"], ["Mundo libre: elige tú", "", "configuración por defecto"]];
+$("enlaces").innerHTML = enlaces.map(([t, h, s]) => `<a href="mundos.html${h ? "#" + h : ""}">${t}<small>${s}</small></a>`).join("");
+function todo() { dibujar1(); dibujar1s(); dibujar2(); dibujar4(); dibujar3(); dibujar3s(); dibujar3g(); }
+for (const id of ["m1", "m1s", "m2", "m3", "mapa3"]) $(id).onchange = todo;
+try { const t = localStorage.getItem("tema"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+$("btnTema").onclick = () => { const osc = document.documentElement.dataset.theme === "dark" || (!document.documentElement.dataset.theme && matchMedia("(prefers-color-scheme: dark)").matches); document.documentElement.dataset.theme = osc ? "light" : "dark"; try { localStorage.setItem("tema", document.documentElement.dataset.theme); } catch (e) {} todo(); };
+addEventListener("resize", todo); todo();
+</script>
+</body>
+</html>
