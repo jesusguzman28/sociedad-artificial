@@ -58,21 +58,46 @@
   .ancho { width: 100%; margin-top: 6px; }
 
   /* Cuerpo */
-  .contenido { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; padding: 20px 24px 40px; max-width: 1500px; margin: 0 auto; }
+  .contenido { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 20px; padding: 16px 24px 40px; max-width: 1880px; margin: 0 auto; }
+  body.sin-rail .contenido { grid-template-columns: minmax(0, 1fr); }
+  body.sin-rail .rail { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start; }
+  body[data-vista="apilados"] .mundos, body[data-vista="A"] .mundos, body[data-vista="B"] .mundos { grid-template-columns: minmax(0, 1fr); }
+  body[data-vista="A"] #cajaB, body[data-vista="B"] #cajaA { display: none; }
   .mundos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; min-width: 0; }
   .rail { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 70px; align-self: start; }
+  /* Barra de herramientas sobre los mapas: vista, pincel y panel lateral */
+  .herramientas { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px 22px; flex-wrap: wrap; padding: 8px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radio); box-shadow: var(--sombra); }
+  .herramientas .grupo { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-3); text-transform: uppercase; letter-spacing: .06em; }
+  .herramientas .grupo .segmentado { gap: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .herramientas .grupo .segmentado button { border: 0; border-radius: 0; border-right: 1px solid var(--line); padding: 6px 11px; font-size: 12.5px; text-transform: none; letter-spacing: 0; }
+  .herramientas .grupo .segmentado button:last-child { border-right: 0; }
+  .herramientas .grupo .campo { text-transform: none; letter-spacing: 0; }
+  .herramientas .grupo .campo input[type=range] { width: 80px; }
+  .herramientas .derecha { margin-left: auto; display: inline-flex; gap: 8px; align-items: center; }
+  .herramientas .pista { font-size: 12px; color: var(--ink-3); }
   .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radio); box-shadow: var(--sombra); padding: 14px 16px; min-width: 0; }
   .panel > h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-3); margin-bottom: 10px; }
   .nota { color: var(--ink-3); font-size: 12px; margin: 8px 0 0; }
 
   /* Paneles de mundo */
   .mundo { padding: 0; overflow: hidden; }
-  .mundo-cab { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line-2); }
+  .mundo-cab { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line-2); flex-wrap: wrap; }
+  .mundo-cab .sis-chip { font-size: 12px; color: var(--ink-2); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; white-space: nowrap; max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+  .mundo-cab .acciones { display: inline-flex; gap: 6px; margin-left: auto; }
+  .mundo-cab .acciones button { padding: 6px 10px; font-size: 12.5px; }
   .mundo-cab h2 { font-size: 15px; }
   .mundo-cab .punto { width: 10px; height: 10px; border-radius: 50%; flex: none; }
-  .mundo-cab .campo { margin-left: auto; }
+  .mundo-cab .campo { margin-left: 0; }
   .mundo-cab input[type=number] { width: 110px; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface-2); font-family: var(--mono); font-size: 12px; }
-  canvas.mapa { display: block; width: 100%; height: auto; cursor: crosshair; background: #fcfcfb; border-bottom: 1px solid var(--line-2); }
+  canvas.mapa { display: block; width: 100%; height: auto; cursor: crosshair; background: #fcfcfb; border-bottom: 1px solid var(--line-2); image-rendering: pixelated; }
+  .simbolos { display: flex; flex-wrap: wrap; gap: 3px 14px; padding: 7px 16px; font-size: 11.5px; color: var(--ink-3); border-bottom: 1px solid var(--line-2); }
+  .simbolos i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+  .simbolos i.aro { background: none; border: 1.5px solid #1b8f5a; }
+  /* Pantalla completa de un mundo: el mapa ocupa casi toda la pantalla y las perillas se ocultan */
+  .mundo:fullscreen { display: flex; flex-direction: column; background: var(--bg); border: 0; border-radius: 0; overflow: auto; }
+  .mundo:fullscreen canvas.mapa { height: calc(100vh - 150px); width: auto; max-width: 100%; margin: 0 auto; border: 0; }
+  .mundo:fullscreen .perillas-box { display: none; }
+  .mundo:fullscreen .mundo-cab, .mundo:fullscreen .strip, .mundo:fullscreen .simbolos { background: var(--surface); }
   .strip { display: grid; grid-template-columns: repeat(5, 1fr); border-bottom: 1px solid var(--line-2); }
   .strip > div { padding: 8px 12px; border-right: 1px solid var(--line-2); }
   .strip > div:last-child { border-right: 0; }
@@ -146,7 +171,7 @@
   details.ideas summary { cursor: pointer; color: var(--ink); }
 
   @media (max-width: 1180px) { .contenido { grid-template-columns: 1fr; } .rail { position: static; } .graficas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 860px) { .mundos { grid-template-columns: 1fr; } .graficas { grid-template-columns: 1fr; } .strip { grid-template-columns: repeat(3, 1fr); } .perillas { grid-template-columns: 1fr; } .contenido { padding: 16px; } .appbar { padding: 10px 16px; } }
+  @media (max-width: 860px) { .mundos { grid-template-columns: 1fr; } .herramientas .pista { display: none; } .graficas { grid-template-columns: 1fr; } .strip { grid-template-columns: repeat(3, 1fr); } .perillas { grid-template-columns: 1fr; } .contenido { padding: 16px; } .appbar { padding: 10px 16px; } }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -171,23 +196,34 @@
       <li><b>Correr.</b> Pulsa ▶ Correr ambos (o la barra espaciadora). Cada mundo avanza en meses; la velocidad está en años por segundo.</li>
       <li><b>Mirar.</b> Pasa el ratón por un mapa para inspeccionar la casilla: terreno, cultivo, hogar y la persona que está ahí, con sus genes y su reserva.</li>
       <li><b>Comparar.</b> Elige un sistema económico distinto en cada mundo, o copia A → B y cambia una sola perilla. Las pestañas Gráficas y Comparación muestran los dos mundos superpuestos.</li>
+      <li><b>Ver en grande.</b> En la barra sobre los mapas eliges la vista (lado a lado, apilados o un solo mundo) y ocultas el panel lateral; el botón ⛶ de cada mundo lo pone a pantalla completa (Esc para salir).</li>
       <li><b>Dibujar.</b> Con el pincel pinta paredes, agua (crea orilla fértil) o tierra sobre un mapa, incluso mientras corre.</li>
       <li><b>Investigar.</b> En Experimentos corres réplicas con estadística y descargas un informe con estructura de paper. En Validación compruebas que el modelo reproduce regularidades conocidas.</li>
     </ol>
     <button id="btnCerrarGuia">Cerrar</button>
   </section>
+  <div class="herramientas" role="toolbar" aria-label="Herramientas de los mapas">
+    <div class="grupo">Vista
+      <div class="segmentado" id="vistas">
+        <button data-vista="lado" title="Los dos mundos uno al lado del otro">Lado a lado</button>
+        <button data-vista="apilados" title="Un mundo debajo del otro, cada mapa a todo el ancho">Apilados</button>
+        <button data-vista="A" title="Solo el Mundo A, a todo el ancho">Solo A</button>
+        <button data-vista="B" title="Solo el Mundo B, a todo el ancho">Solo B</button>
+      </div></div>
+    <div class="grupo" title="Clic o arrastre sobre un mapa. El agua pintada crea una orilla fértil de hasta 4 casillas; las paredes bloquean el paso.">Pincel
+      <div id="pinceles" class="segmentado"></div>
+      <label class="campo" for="pincelTam">Tamaño <input type="range" id="pincelTam" min="1" max="4" value="1"><b id="pincelTamTxt">1</b></label></div>
+    <div class="derecha">
+      <span class="pista">Pasa el ratón por un mapa para inspeccionar cada casilla · ⛶ pantalla completa</span>
+      <button id="btnRail" title="Mostrar u ocultar el panel lateral (población, archivos y registro). Oculto, los mapas ocupan todo el ancho">Panel lateral</button>
+    </div>
+  </div>
   <section class="mundos">
     <article class="panel mundo" id="cajaA"></article>
     <article class="panel mundo" id="cajaB"></article>
   </section>
 
   <aside class="rail">
-    <section class="panel">
-      <h2>Pincel</h2>
-      <div id="pinceles" class="segmentado"></div>
-      <label class="campo" for="pincelTam" style="margin-top:10px">Tamaño <input type="range" id="pincelTam" min="1" max="4" value="1"><b id="pincelTamTxt">1</b></label>
-      <p class="nota">Clic o arrastre sobre un mapa. El agua pintada crea una orilla fértil de hasta 4 casillas; las paredes bloquean el paso.</p>
-    </section>
     <section class="panel">
       <h2>Población</h2>
       <label class="campo" for="maxPob">Límite por mundo <input type="range" id="maxPob" min="200" max="6000" step="100" value="3000"><b id="maxPobTxt">3000</b></label>
@@ -1144,7 +1180,7 @@ function dibujarMapa(m, cv) {
       }
       else if (cu > 0) {   // cultivo en sus tres etapas; si está seco se ve como brote y con un punto rojo
         sprite(ctx, cu >= 1 ? SP.maduro : (cu < 0.35 || m.riego[i] <= 0) ? SP.brote : SP.planta, X, Y, tam);
-        if (cu < 1 && m.riego[i] <= 0) { ctx.fillStyle = "#c43c3c"; ctx.fillRect(X + tam - 4, Y + 1, 3, 3); }
+        if (cu < 1 && m.riego[i] <= 0) { ctx.fillStyle = "#c43c3c"; const q = Math.max(3, tam * 0.2); ctx.fillRect(X + tam - q - 1, Y + 1, q, q); }
       }
       else if (com > 6 && m.capComida[i] > 7) sprite(ctx, com > 8.5 ? (h % 3 ? SP.arbolV : SP.arbolN) : SP.arbusto, X, Y, tam);
       else if (com > 4 && h % 13 === 0) sprite(ctx, SP.hongo, X, Y, tam);
@@ -1152,7 +1188,7 @@ function dibujarMapa(m, cv) {
   }
   for (const f of m.flashes) {
     const x1 = ox + f.x1 * tam + tam / 2, y1 = oy + f.y1 * tam + tam / 2, x2 = ox + f.x2 * tam + tam / 2, y2 = oy + f.y2 * tam + tam / 2;
-    ctx.strokeStyle = f.ok ? `rgba(227,73,72,${f.ttl / 10})` : `rgba(120,120,120,${f.ttl / 10})`; ctx.lineWidth = 2;
+    ctx.strokeStyle = f.ok ? `rgba(227,73,72,${f.ttl / 10})` : `rgba(120,120,120,${f.ttl / 10})`; ctx.lineWidth = Math.max(2, tam / 8);
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     if (conSprites) { ctx.globalAlpha = f.ttl / 10; sprite(ctx, SP.espada, (x1 + x2) / 2 - tam * 0.4, (y1 + y2) / 2 - tam * 0.5, tam * 0.8); ctx.globalAlpha = 1; }
   }
@@ -1170,12 +1206,12 @@ function dibujarMapa(m, cv) {
     }
     const bob = a.movio ? -((frameAnim + a.id) % 2) * tam * 0.12 : 0;    // paso al caminar
     sprite(ctx, spriteAgente(a, m), X, Y + bob, tam, a.dir < 0);
-    const chico = tam * 0.45;
+    const chico = tam * 0.45, d = tam * 0.19, rp = Math.max(2.5, tam * 0.16);   // marcadores proporcionales a la casilla
     if (a.comida > 30) sprite(ctx, SP.comida, X + tam - chico, Y + tam - chico, chico);    // tiene buena reserva de comida
-    if (a.energia < 30) { ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(X + tam - 3, Y + 3, 2.5, 0, Math.PI * 2); ctx.fill(); }   // hambriento
-    if (a.gestando > 0) { ctx.fillStyle = "#e87ba4"; ctx.beginPath(); ctx.arc(X + 3, Y + tam - 3, 2.5, 0, Math.PI * 2); ctx.fill(); }   // embarazada
-    if (a.destino >= 0) { ctx.fillStyle = "#2a78d6"; ctx.beginPath(); ctx.arc(X + 3, Y + 3, 2.5, 0, Math.PI * 2); ctx.fill(); }        // emigrando
-    if (a.enfermo > 0) { ctx.strokeStyle = "#1b8f5a"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(X + tam / 2, Y + tam / 2, tam * 0.46, 0, Math.PI * 2); ctx.stroke(); }   // enfermo: aro verde
+    if (a.energia < 30) { ctx.fillStyle = "#e34948"; ctx.beginPath(); ctx.arc(X + tam - d, Y + d, rp, 0, Math.PI * 2); ctx.fill(); }   // hambriento
+    if (a.gestando > 0) { ctx.fillStyle = "#e87ba4"; ctx.beginPath(); ctx.arc(X + d, Y + tam - d, rp, 0, Math.PI * 2); ctx.fill(); }   // embarazada
+    if (a.destino >= 0) { ctx.fillStyle = "#2a78d6"; ctx.beginPath(); ctx.arc(X + d, Y + d, rp, 0, Math.PI * 2); ctx.fill(); }        // emigrando
+    if (a.enfermo > 0) { ctx.strokeStyle = "#1b8f5a"; ctx.lineWidth = Math.max(1.5, tam / 10); ctx.beginPath(); ctx.arc(X + tam / 2, Y + tam / 2, tam * 0.46, 0, Math.PI * 2); ctx.stroke(); }   // enfermo: aro verde
     if (a.herr >= 2) sprite(ctx, SP.pico, X, Y, chico);                                     // con herramienta
     if (a.def > 0 && a.def < 3) sprite(ctx, SP.escudo, X, Y + tam - chico, chico);          // algo de defensa
   }
@@ -1272,13 +1308,15 @@ function construirMundo(m, caja) {
   m.caja = caja;
   caja.innerHTML = `<header class="mundo-cab"><span class="punto" style="background:${m.color}"></span><h2>${m.nombre}</h2>
       <label class="campo">Mapa <select class="mapaTipo" aria-label="Tipo de mapa de ${m.nombre}"><option value="0">4 oasis</option><option value="1">río</option><option value="2">lago central</option><option value="3">dos oasis lejanos</option><option value="4">costa</option><option value="5">muchos charcos</option></select></label>
-      <label class="campo" style="margin-left:0">Semilla <input type="number" class="semilla" value="${m.semilla}" aria-label="Semilla de ${m.nombre}"></label>
-      <button class="sec">Reiniciar</button><button class="imagen" title="Descargar el mapa como imagen PNG">Imagen</button></header>
+      <label class="campo">Semilla <input type="number" class="semilla" value="${m.semilla}" aria-label="Semilla de ${m.nombre}"></label>
+      <span class="sis-chip" title="Sistema económico actual (se cambia en las perillas)"></span>
+      <div class="acciones"><button class="sec" title="Vuelve a generar este mundo con la semilla indicada">Reiniciar</button><button class="imagen" title="Descargar el mapa como imagen PNG">Imagen</button><button class="pantalla" title="Ver este mundo a pantalla completa (Esc para salir)" aria-label="Pantalla completa de ${m.nombre}">⛶</button></div></header>
     <canvas class="mapa" width="768" height="480"></canvas>
     <div class="strip">
       <div><span>Año</span><b class="s-anio">0</b></div><div><span>Población</span><b class="s-pob">0</b></div><div><span>Hogares</span><b class="s-hog">0</b></div>
       <div><span>Ciudades</span><b class="s-ciu">0</b></div><div><span>Hambrientos</span><b class="s-ham">0 %</b></div>
     </div>
+    <div class="simbolos" aria-label="Símbolos del mapa"><span><i style="background:#e34948"></i>hambriento</span><span><i style="background:#e87ba4"></i>embarazada</span><span><i style="background:#2a78d6"></i>emigrando</span><span><i class="aro"></i>enfermo</span><span>🍎 reserva alta</span><span>⚔ ataque</span><span><i style="background:#c43c3c;border-radius:1px"></i>cultivo seco</span><span>carpa → casa → edificio según la densidad</span></div>
     <div class="extincion" hidden><h3></h3><div class="texto"></div></div>
     <details class="perillas-box" open><summary>Perillas de ${m.nombre}</summary>
       <label class="campo" style="margin:0 0 8px">Sistema económico <select class="sistema">${Object.entries(SISTEMAS).map(([k, s]) => `<option value="${k}">${s.nombre}</option>`).join("")}</select></label>
@@ -1289,8 +1327,17 @@ function construirMundo(m, caja) {
   caja.querySelector(".imagen").onclick = () => { const a = document.createElement("a"); a.href = m.canvas.toDataURL("image/png"); a.download = `${m.nombre.replace(" ", "_")}_anio_${(m.turno / ANIO).toFixed(0)}.png`; a.click(); };
   const selSistema = caja.querySelector(".sistema"); selSistema.value = m.cfg.sistema;
   selSistema.onchange = () => { aplicarSistema(m.cfg, selSistema.value); actualizarPerillas(m); registrar(`${m.nombre}: sistema ${SISTEMAS[m.cfg.sistema].nombre}. Las perillas quedan según sus reglas; puedes retocarlas (pasa a "personalizado").`); };
-  m.actualizarSistema = () => { selSistema.value = m.cfg.sistema; };
-  caja.querySelector(".mundo-cab button").onclick = () => {
+  const chipSis = caja.querySelector(".sis-chip");
+  m.actualizarSistema = () => { selSistema.value = m.cfg.sistema; chipSis.textContent = SISTEMAS[m.cfg.sistema] ? SISTEMAS[m.cfg.sistema].nombre : "personalizado"; };
+  m.actualizarSistema();
+  caja.querySelector(".pantalla").onclick = () => { if (document.fullscreenElement === caja) document.exitFullscreen(); else if (caja.requestFullscreen) caja.requestFullscreen().catch(() => registrar("El navegador no permitió la pantalla completa.")); };
+  // El lienzo se dibuja a la resolución real de la pantalla: cuanto más ancho el panel, más grandes las casillas
+  const ajustar = () => { const r = m.canvas.getBoundingClientRect(); if (!r.width) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2), tam = Math.max(8, Math.floor(r.width * dpr / m.cfg.ancho)), w = tam * m.cfg.ancho, h = tam * m.cfg.alto;
+    if (m.canvas.width !== w || m.canvas.height !== h) { m.canvas.width = w; m.canvas.height = h; if (!corriendo) dibujarMapa(m, m.canvas); } };
+  if (window.ResizeObserver) new ResizeObserver(ajustar).observe(m.canvas); else window.addEventListener("resize", ajustar);
+  m.ajustarLienzo = ajustar;
+  caja.querySelector(".mundo-cab .sec").onclick = () => {
     const inp = caja.querySelector(".semilla"); m.semilla = +inp.value || Math.floor(Math.random() * 1e9); m.semillaMapa = m.semilla; inp.value = m.semilla;
     m.generar(); registrar(`${m.nombre}: mundo nuevo con semilla ${m.semilla}. Con la misma semilla y perillas, la simulación se repite igual.`); dibujarTodo();
   };
@@ -1401,6 +1448,27 @@ function inspeccionar(m, e, p) {
   tip.innerHTML = L.join("<br>"); tip.style.whiteSpace = "normal"; tip.style.maxWidth = "360px";
   tip.style.left = Math.min(e.clientX + 14, innerWidth - 380) + "px"; tip.style.top = (e.clientY + 14) + "px"; tip.style.display = "block";
 }
+
+// Vista de los mapas (lado a lado, apilados, solo A, solo B) y panel lateral; se recuerdan en este navegador
+function ponerVista(v) {
+  document.body.dataset.vista = v;
+  for (const b of $("vistas").children) b.classList.toggle("activo", b.dataset.vista === v);
+  try { localStorage.setItem("vista", v); } catch (e) {}
+  for (const m of MUNDOS) if (m.ajustarLienzo) m.ajustarLienzo();
+  dibujarTodo();
+}
+for (const b of $("vistas").children) b.onclick = () => ponerVista(b.dataset.vista);
+function ponerRail(visible) {
+  document.body.classList.toggle("sin-rail", !visible); $("btnRail").classList.toggle("activo", visible);
+  try { localStorage.setItem("rail", visible ? "1" : "0"); } catch (e) {}
+  for (const m of MUNDOS) if (m.ajustarLienzo) m.ajustarLienzo();
+  dibujarTodo();
+}
+$("btnRail").onclick = () => ponerRail(document.body.classList.contains("sin-rail"));
+let vistaIni = "lado", railIni = false;
+try { vistaIni = localStorage.getItem("vista") || vistaIni; railIni = localStorage.getItem("rail") === "1"; } catch (e) {}
+ponerVista(vistaIni); ponerRail(railIni);
+document.addEventListener("fullscreenchange", () => { for (const m of MUNDOS) if (m.ajustarLienzo) m.ajustarLienzo(); dibujarTodo(); });
 
 // Barra espaciadora: correr o pausar (salvo si se está escribiendo en un campo)
 document.addEventListener("keydown", e => { if (e.code === "Space" && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); $("btnCorrer").click(); } });
