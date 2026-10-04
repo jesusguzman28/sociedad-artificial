@@ -89,4 +89,7 @@ if os.path.exists(pdf): shutil.copy(pdf, os.path.join(DOCS, "manuscrito.pdf"))
 for nombre in os.listdir(os.path.join(AQUI, "figuras")):
     if nombre.endswith(".png"): shutil.copy(os.path.join(AQUI, "figuras", nombre), os.path.join(DOCS, "figuras", nombre))
 for nombre in ["replicas.csv", "mapas.csv"]: shutil.copy(os.path.join(AQUI, "datos", nombre), os.path.join(DOCS, "datos", nombre))
+os.makedirs(os.path.join(DOCS, "capturas"), exist_ok=True)
+for nombre in os.listdir(os.path.join(AQUI, "capturas")):
+    if nombre.endswith(".png"): shutil.copy(os.path.join(AQUI, "capturas", nombre), os.path.join(DOCS, "capturas", nombre))
 print("sitio construido en", DOCS, "| datos.js", os.path.getsize(os.path.join(DOCS, "datos.js")) // 1024, "KB")

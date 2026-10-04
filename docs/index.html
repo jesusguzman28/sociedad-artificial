@@ -58,14 +58,17 @@
   .enlaces-sim a small { display:block; color:var(--ink-3); font-size:12px; margin-top:3px; }
   .ancho { overflow-x:auto; }
   footer { border-top:1px solid var(--line); margin-top:40px; padding-top:16px; color:var(--ink-3); font-size:13px; }
-  img.fig { max-width:100%; border:1px solid var(--line); border-radius:6px; background:#fff; }
+  img.fig { max-width:100%; border:1px solid var(--line); border-radius:6px; background:#fff; display:block; }
+  .galeria { display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:14px; margin-top:10px; }
+  .galeria a { text-decoration:none; color:var(--ink-2); font-size:12.5px; }
+  .galeria small { display:block; margin-top:5px; }
   @media (max-width:700px) { .portada h1 { font-size:26px; } canvas.g { height:240px; } }
 </style>
 </head>
 <body>
 <nav class="nav">
   <span class="marca">Sociedad artificial que aprende</span>
-  <a href="#resumen">Resumen</a><a href="#resultados">Resultados</a><a href="#geografia">Geografía</a><a href="#modelo">Modelo</a><a href="#validacion">Validación</a><a href="#simulador">Simulador</a><a href="#descargas">Descargas</a>
+  <a href="#resumen">Resumen</a><a href="#resultados">Resultados</a><a href="#imagenes">Imágenes</a><a href="#geografia">Geografía</a><a href="#modelo">Modelo</a><a href="#validacion">Validación</a><a href="#simulador">Simulador</a><a href="#descargas">Descargas</a>
   <button id="btnTema" title="Tema claro u oscuro">◐</button>
 </nav>
 
@@ -114,6 +117,31 @@
       <div class="leyenda"><span><i class="sw" style="background:var(--A)"></i>sin impuesto</span><span><i class="sw" style="background:var(--D)"></i>impuesto mensual 20 %</span><span><i class="sw" style="background:var(--F)"></i>reparto total mensual</span></div>
       <canvas class="g" id="g4"></canvas>
       <div class="nota" id="n4">Reserva de comida por persona al año 150 (tres réplicas acumuladas). La línea discontinua marca los 20 que cuesta criar un hijo.</div>
+    </div>
+  </section>
+
+  <section id="imagenes">
+    <h2>Las simulaciones en imágenes</h2>
+    <p>Capturas de los mundos tal como los dibuja el simulador: el terreno muestra cuánta comida hay (tierra pelada, pasto, arbustos, árboles), los surcos son cultivos, las carpas, casas y edificios son hogares cada vez más densos, y cada persona se dibuja según sus genes dominantes (campesinos, forzudos, magos) o su defensa (caballeros). Haz clic en una imagen para verla a tamaño completo.</p>
+    <h3>Un mundo a lo largo del tiempo</h3>
+    <p class="nota">Socialdemocracia en el mapa de río, semilla 2024, años 0, 10, 30, 60, 100 y 150.</p>
+    <a href="capturas/mundos_secuencia.png"><img class="fig" src="capturas/mundos_secuencia.png" alt="Secuencia temporal de un mundo" loading="lazy"></a>
+    <h3>El mismo mundo bajo seis sistemas (año 150)</h3>
+    <p class="nota">Mapa de cuatro oasis, semilla 2024. Ciudades densas y campos cultivados en los sistemas sin reparto alto; aldeas diminutas y bosque intacto en socialismo y comunismo.</p>
+    <a href="capturas/mundos_sistemas.png"><img class="fig" src="capturas/mundos_sistemas.png" alt="Seis sistemas económicos en el mismo mapa" loading="lazy"></a>
+    <h3>Seis geografías con el mismo sistema (año 100)</h3>
+    <p class="nota">Anarcocapitalismo. El poblamiento sigue a la orilla: franja junto al río, anillo en torno al lago, línea estrecha en la costa, archipiélago de aldeas entre los charcos.</p>
+    <a href="capturas/mundos_mapas.png"><img class="fig" src="capturas/mundos_mapas.png" alt="Seis geografías con el mismo sistema" loading="lazy"></a>
+    <h3>Figuras del manuscrito</h3>
+    <div class="galeria">
+      <a href="figuras/sistemas_barras.png"><img class="fig" src="figuras/sistemas_barras.png" alt="Indicadores por sistema" loading="lazy"><small>Seis indicadores por sistema económico</small></a>
+      <a href="figuras/series_sistemas.png"><img class="fig" src="figuras/series_sistemas.png" alt="Series temporales" loading="lazy"><small>Población y producción durante 200 años</small></a>
+      <a href="figuras/impuesto.png"><img class="fig" src="figuras/impuesto.png" alt="Barrido del impuesto" loading="lazy"><small>Población, producción por persona y natalidad según el impuesto</small></a>
+      <a href="figuras/reservas.png"><img class="fig" src="figuras/reservas.png" alt="Distribución de reservas" loading="lazy"><small>Distribución de reservas: el mecanismo del colapso</small></a>
+      <a href="figuras/mapas_heatmap.png"><img class="fig" src="figuras/mapas_heatmap.png" alt="Mapa de calor" loading="lazy"><small>Población, producción y Gini por mapa y sistema</small></a>
+      <a href="figuras/mapas_series.png"><img class="fig" src="figuras/mapas_series.png" alt="Series por mapa" loading="lazy"><small>Población a lo largo del tiempo en cada geografía</small></a>
+      <a href="figuras/mapas_geo.png"><img class="fig" src="figuras/mapas_geo.png" alt="Geografía y población" loading="lazy"><small>Geografía frente a población; violencia y agricultura por mapa</small></a>
+      <a href="figuras/mapas_lineas.png"><img class="fig" src="figuras/mapas_lineas.png" alt="Perfil por mapa" loading="lazy"><small>Perfil de cada sistema a lo largo de las seis geografías</small></a>
     </div>
   </section>
 

@@ -86,6 +86,14 @@ El modelo no usa datos externos.
 \paragraph{Comercio.} Con el vecino adyacente que más agua carga, cada uno valora el agua por su tasa marginal de sustitución $\text{TMS}=(\text{comida}+0{,}5)/(\text{agua}+0{,}5)$; si una supera a la otra en más del 10\,\%, quien más valora el agua compra una unidad al precio $\sqrt{\text{TMS}_a\,\text{TMS}_b}$, acotado entre 0{,}2 y 5 \citep[cap.~4]{epstein1996growing}.
 \paragraph{Instituciones.} Con la frecuencia fijada se recauda una fracción (el impuesto) de la reserva de comida de cada persona y se reparte por igual o según necesidad (primero se lleva a 8 de reserva a quienes tienen menos, empezando por los más pobres; el resto por igual). La propiedad privada de cultivos y la facilidad para robar se fijan como se indica en la tabla~\ref{tab:sistemas-reglas}. Las enfermedades estaban desactivadas en los experimentos aquí reportados.
 
+\subsection{Aspecto de la simulación}
+La figura~\ref{fig:secuencia} muestra un mundo a lo largo del tiempo tal como lo dibuja el simulador: el terreno indica cuánta comida hay (tierra pelada, pasto, arbustos, árboles), las parcelas con surcos son cultivos, las carpas, casas y edificios son hogares de densidad creciente, y cada persona se dibuja según sus genes dominantes y su defensa (campesinos, forzudos, magos, caballeros). En pocas décadas la población se concentra junto al agua, ocupa la tierra fértil con cultivos y forma ciudades; el territorio alejado del agua queda con bosque y sin habitar.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figuras/mundos_secuencia.pdf}
+\caption{Un mundo (socialdemocracia, mapa de río, semilla 2024) en los años 0, 10, 30, 60, 100 y 150. Cada panel indica población, hogares y cultivos.}\label{fig:secuencia}
+\end{figure}
+
 \section{Validación por hechos estilizados}\label{sec:validacion}
 Antes de usar el modelo para experimentos se comprobó que reproduce regularidades conocidas, el primer nivel de validación recomendado para modelos basados en agentes \citep{windrum2007,fagiolo2019validation}. Cada prueba corre el modelo en dos condiciones con dos semillas durante 80 a 120 años y comprueba una predicción cualitativa (tabla~\ref{tab:validacion}). Las seis se reproducen. Esta validación es cualitativa: indica que el modelo se comporta como los de referencia, no que prediga una economía concreta.
 
@@ -165,6 +173,13 @@ La tabla~\ref{tab:sistemas} y la figura~\ref{fig:barras} resumen los resultados;
 \resizebox{\textwidth}{!}{\input{tablas/totales}}
 \end{table}
 
+La figura~\ref{fig:mundos-sistemas} muestra el mismo mundo (mapa de cuatro oasis, semilla 2024) bajo cada sistema al cabo de 150 años. Las diferencias son visibles a simple vista: ciudades densas y campos cultivados en los sistemas sin reparto alto, con muchos caballeros (personas con defensa alta) en los que permiten el robo; y aldeas diminutas con bosques intactos en el socialismo y el comunismo.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figuras/mundos_sistemas.pdf}
+\caption{El mismo mundo bajo los seis sistemas económicos en el año 150 (mapa de cuatro oasis, semilla 2024, réplica 0 del experimento).}\label{fig:mundos-sistemas}
+\end{figure}
+
 Tres grupos de sistemas se distinguen con claridad. Los sistemas sin reparto o con reparto bajo (anarquía primitiva, anarcocapitalismo, capitalismo con Estado mínimo) y la socialdemocracia sostienen poblaciones de entre \pobMinimo{} y \pobAnarq{} personas con producciones de entre \prodMinimo{} y \prodAnarq{} unidades de comida por mes. Los sistemas con reparto mensual alto (socialismo con planificación parcial y comunismo) colapsan a poblaciones de \pobSocial{} y \pobComun{} personas y producciones de \prodSocial{} y \prodComun{} por mes; frente al anarcocapitalismo, la diferencia de población del comunismo tiene $d=\dComunAncapPob$ ($\pComunAncapPob$).
 
 La anarquía primitiva es el sistema con mayor población y producción, pero también el más violento (\ataqAnarq{} ataques por mes frente a \ataqAncap{} en el anarcocapitalismo; $\pAnarqAncapAtaq$) y el más desigual (Gini \giniAnarq{} frente a \giniAncap{}). El anarcocapitalismo, al introducir propiedad privada de los cultivos, convierte parte del conflicto en robos de cosecha (tabla~\ref{tab:totales}) y eleva la inversión en defensa.
@@ -238,6 +253,13 @@ La figura~\ref{fig:mapas-series} muestra la dinámica completa en cada geografí
 \begin{figure}[htbp]\centering
 \includegraphics[width=\textwidth]{figuras/mapas_geo.pdf}
 \caption{Izquierda: población media (promedio de los seis sistemas) frente a la distancia media de la tierra al agua en cada mapa. Centro y derecha: ataques por mes y parcelas cultivadas por mapa y sistema.}\label{fig:mapas-geo}
+\end{figure}
+
+La figura~\ref{fig:mundos-mapas} muestra las seis geografías con el mismo sistema (anarcocapitalismo) en el año 100: se aprecia cómo el poblamiento sigue a la orilla (una franja a lo largo del río, un anillo en torno al lago, una línea estrecha en la costa, un archipiélago de aldeas entre los charcos) y cómo el interior alejado del agua permanece como bosque sin habitar.
+
+\begin{figure}[htbp]\centering
+\includegraphics[width=\textwidth]{figuras/mundos_mapas.pdf}
+\caption{Las seis geografías bajo el anarcocapitalismo en el año 100 (semilla 2024).}\label{fig:mundos-mapas}
 \end{figure}
 
 \begin{table}[htbp]\centering\small
