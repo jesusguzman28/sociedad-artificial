@@ -1365,7 +1365,7 @@ function construirMundo(m, caja) {
 }
 function actualizarPerillas(m) { for (const k in m.perillas) m.perillas[k](); if (m.actualizarSistema) m.actualizarSistema(); }
 
-// Preajustes por URL (para enlazar desde el paper interactivo): #sistemaA=1&sistemaB=2&mapa=1&semilla=2024
+// Preajustes por URL (para enlazar desde el paper interactivo): #sistemaA=1&sistemaB=2&mapa=1&semilla=2024 (y opcionalmente vista=apilados|A|B, rail=0|1)
 try {
   const h = new URLSearchParams(location.hash.replace(/^#/, ""));
   if ([...h.keys()].length) {
@@ -1467,6 +1467,8 @@ function ponerRail(visible) {
 $("btnRail").onclick = () => ponerRail(document.body.classList.contains("sin-rail"));
 let vistaIni = "lado", railIni = false;
 try { vistaIni = localStorage.getItem("vista") || vistaIni; railIni = localStorage.getItem("rail") === "1"; } catch (e) {}
+try { const h = new URLSearchParams(location.hash.replace(/^#/, "")); if (h.get("vista")) vistaIni = h.get("vista"); if (h.has("rail")) railIni = h.get("rail") === "1"; } catch (e) {}   // #vista=apilados&rail=0
+if (!["lado", "apilados", "A", "B"].includes(vistaIni)) vistaIni = "lado";
 ponerVista(vistaIni); ponerRail(railIni);
 document.addEventListener("fullscreenchange", () => { for (const m of MUNDOS) if (m.ajustarLienzo) m.ajustarLienzo(); dibujarTodo(); });
 
