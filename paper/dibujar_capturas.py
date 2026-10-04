@@ -10,7 +10,7 @@ def tile(i): return ATLAS.crop((i * T, 0, i * T + T, T))
 TILES = {i: tile(i) for i in range(ATLAS.width // T)}
 TILES_FLIP = {i: TILES[i].transpose(Image.FLIP_LEFT_RIGHT) for i in TILES}
 def hash_(x, y): return (((x + 1) * 73856093) ^ ((y + 1) * 19349663)) & 0xFFFFFFFF
-try: FUENTE = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 22); FUENTE_P = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 16)
+try: FUENTE = ImageFont.truetype("C:/Windows/Fonts/segoeuib.ttf", 44); FUENTE_P = ImageFont.truetype("C:/Windows/Fonts/segoeui.ttf", 16)
 except Exception: FUENTE = FUENTE_P = ImageFont.load_default()
 
 def dibujar(e):
@@ -43,7 +43,7 @@ def dibujar(e):
 
 def rejilla(paneles, columnas, nombre, titulo_panel):
     """paneles: lista de (imagen, etiqueta). Compone una rejilla con etiquetas y guarda PNG (capturas/) y PDF (figuras/)."""
-    w, h = paneles[0][0].size; m = 8; alto_et = 34
+    w, h = paneles[0][0].size; m = 10; alto_et = 62
     filas = (len(paneles) + columnas - 1) // columnas
     out = Image.new("RGB", (columnas * (w + m) + m, filas * (h + alto_et + m) + m), (255, 255, 255)); d = ImageDraw.Draw(out)
     for k, (im, et) in enumerate(paneles):
